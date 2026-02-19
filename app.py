@@ -19,8 +19,9 @@ ARQ_CHAT = os.path.join(DATA_PATH, "chat.json")
 # ================= FUNÇÕES =================
 def carregar(arq):
     if not os.path.exists(arq):
-        return []
-    with open(arq, "r", encoding="utf-8") as f:
+        with open(arq, 'w') as f:
+            json.dump([], f)
+    with open(arq) as f:
         return json.load(f)
 
 def salvar(arq, dados):
@@ -37,10 +38,15 @@ def normalizar(txt):
 
 # ================= USUÁRIO PADRÃO =================
 if not os.path.exists(ARQ_USUARIOS):
-    salvar(ARQ_USUARIOS, [
-        {"user": "admin", "senha": "123456", "perfil": "admin", "ativo": True}
-    ])
-
+    with open(ARQ_USUARIOS, 'w') as f:
+        json.dump([
+            {
+                "user": "admin",
+                "senha": "123",
+                "perfil": "admin",
+                "ativo": True
+            }
+        ], f)
 # ================= RESOLUÇÕES =================
 RESOLUCOES = {
 
@@ -114,6 +120,12 @@ def login():
 
     usuarios = carregar(ARQ_USUARIOS)
 
+    # 👇 COLOCA AQUI
+    print("USUÁRIO:", user)
+    print("SENHA:", senha)
+    print("ARQ:", ARQ_USUARIOS)
+    print("DADOS:", usuarios)
+
     for u in usuarios:
         if u['user'] == user and u['senha'] == senha:
 
@@ -133,7 +145,9 @@ def login():
 def sistema():
 
     if 'user' not in session:
-        return redirect('/')
+        from flask import url_for
+
+        return redirect(url_for('sistema'))
 
     return render_template('sistema.html',
                            usuario=session['user'],
