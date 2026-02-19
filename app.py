@@ -19,18 +19,6 @@ ARQ_ACESSOS = os.path.join(DATA_PATH, "acessos.json")
 ARQ_ANALISES = os.path.join(DATA_PATH, "historico.json")
 ARQ_CHAT = os.path.join(DATA_PATH, "chat.json")
 
-# ================= GOOGLE (DESATIVADO) =================
-# SCOPE = [
-#     "https://spreadsheets.google.com/feeds",
-#     "https://www.googleapis.com/auth/drive"
-# ]
-
-# CREDS = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", SCOPE)
-# CLIENT = gspread.authorize(CREDS)
-
-# PLANILHA = CLIENT.open_by_key("SUA_CHAVE")
-# ABA = PLANILHA.get_worksheet(0)
-
 # ================= FUNÇÕES =================
 def carregar(arq):
     if not os.path.exists(arq):
@@ -195,35 +183,25 @@ def chat_enviar():
 def chat_listar():
     return jsonify(carregar(ARQ_CHAT))
 
-# ================= PLANILHA =================
-@app.route('/planilha')
-def planilha():
-    return jsonify([])
+
 
 # ================= REGISTRAR =================
 @app.route('/registrar', methods=['POST'])
 def registrar():
 
     data = request.json
+    historico = carregar(ARQ_ANALISES)
 
-    headers = ABA.row_values(1)
-    linha = [""] * len(headers)
+    historico.append({
+        "protocolo": data.get("protocolo"),
+        "nome": data.get("nome"),
+        "estado": data.get("estado"),
+        "tipo": data.get("tipo"),
+        "status": data.get("status"),
+        "data": datetime.now().strftime("%d/%m/%Y")
+    })
 
-    data_formatada = datetime.now().strftime("%d/%m/%Y")
-
-    mapa = {
-        "PROTOCOLO": data.get("protocolo"),
-        "NOME DO INTERESSADO": data.get("nome"),
-        "ESTADO": data.get("estado"),
-        "TIPO DE REGISTRO": data.get("tipo"),
-        "DATA DO REGISTRO": data_formatada,
-        "STATUS": data.get("status")
-    }
-
-    for i, col in enumerate(headers):
-        linha[i] = mapa.get(col.upper(), "")
-
-    # ABA.append_row(linha)
+    salvar(ARQ_ANALISES, historico)
 
     return jsonify({"msg": "Salvo"})
 
