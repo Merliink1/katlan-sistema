@@ -1,0 +1,683 @@
+/* ================= BASE ================= */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body{
+    background:#f5f7fa;
+    display:flex;
+}
+
+/* ================= TOPO ================= */
+.topo{
+    position:fixed;
+    top:0;
+    left:220px;
+    right:0;
+    height:70px;
+    background:#0f2a44;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end; /* 🔥 joga tudo pra direita */
+    padding:0 20px;
+    z-index:1000;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.logo strong{
+    font-size:22px;
+    letter-spacing:3px;
+    font-weight:600;
+}
+
+.logo .sub{
+    font-size:13px;
+    color:#94a3b8;
+}
+
+.info-user{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    font-size:14px;
+}
+
+.info-user button{
+    background:#1d4ed8;
+    border:none;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.info-user button:hover{
+    background:#2563eb;
+}
+
+
+
+/* ================= MENU ================= */
+.menu-lateral{
+    position:fixed;
+    left:0;
+    top:0;
+    width:220px;
+    height:100vh;
+    background:#0f172a;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.menu-lateral button{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    background:none;
+    border:none;
+    color:#cbd5e1;
+    text-align:left;
+    padding:12px 20px;
+    cursor:pointer;
+    font-size:14px;
+    transition:0.2s;
+    border-left:3px solid transparent;
+}
+
+.menu-lateral button:hover{
+    background:#1e293b;
+    border-left:3px solid #3b82f6;
+    color:#fff;
+
+}
+
+button{
+    padding:10px 14px;
+    border:none;
+    border-radius:6px;
+    background:#2563eb;
+    color:#fff;
+    cursor:pointer;
+    margin-right:5px;
+    font-size:14px;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+/* SUBMENU */
+.menu-hover{
+    position:relative;
+}
+
+.submenu{
+    display:none;
+    flex-direction:column;
+    background:#1e293b;
+}
+
+.menu-hover:hover .submenu{
+    display:flex;
+}
+
+.submenu button{
+    padding-left:40px;
+    font-size:14px;
+}
+
+/* NOTIF */
+#notif{
+    color:red;
+    margin-left:5px;
+}
+
+/* ================= CONTAINER ================= */
+.container{
+    margin-left:220px;
+    margin-top:80px;
+    padding:20px;
+    width:100%;
+}
+
+/* ================= CARDS ================= */
+.card{
+    background:#fff;
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom:20px;
+}
+
+.hidden{
+    display:none !important;
+}
+
+
+/* ================= TITULOS ================= */
+h2{
+    font-size:22px;
+    margin-bottom:15px;
+}
+
+h3{
+    font-size:18px;
+    margin-bottom:15px;
+}
+
+/* ================= INPUTS ================= */
+input, select, textarea{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:6px;
+    border:1px solid #cbd5e1;
+    font-size:14px;
+}
+
+textarea{
+    min-height:150px;
+}
+
+/* ================= BOTÕES ================= */
+button{
+    padding:10px 14px;
+    border:none;
+    border-radius:6px;
+    background:#1d4ed8;
+    color:#fff;
+    cursor:pointer;
+    margin-right:5px;
+}
+
+button:hover{
+    background:#2563eb;
+}
+
+.btn-danger{
+    background:#dc2626;
+}
+
+.btn-danger:hover{
+    background:#b91c1c;
+}
+
+/* ================= TAGS ================= */
+.tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+}
+
+.tag{
+    background:#e2e8f0;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:13px;
+}
+
+.tag b{
+    margin-left:5px;
+    cursor:pointer;
+    color:red;
+}
+
+/* ================= GRID ================= */
+.gridCampos{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
+    gap:15px;
+}
+
+/* ================= CHAT ================= */
+.chat-box{
+    height:250px;
+    overflow-y:auto;
+    border:1px solid #cbd5e1;
+    padding:10px;
+    margin-bottom:10px;
+    background:#a5cef7;
+    border-radius:8px;
+}
+
+.chat-box div{
+    margin-bottom:10px;
+    font-size:14px;
+}
+
+/* ================= MODAL ================= */
+.modal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:rgba(0,0,0,0.5);
+    z-index:9999;
+}
+
+.modal.hidden{
+    display:none;
+}
+
+.modal-content{
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+    width:300px;
+    max-width:90%;
+}
+
+/* ================= RESPONSIVO ================= */
+@media(max-width:900px){
+
+    .menu-lateral{
+        width:180px;
+    }
+
+    .container{
+        margin-left:180px;
+    }
+
+    .topo{
+        left:180px;
+    }
+}
+
+.menu-lateral button{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.menu-lateral svg{
+    width:16px;
+    height:16px;
+}
+
+body.dark{
+    background:#0f172a;
+    color:#e2e8f0;
+}
+
+body.dark .card{
+    background:#1e293b;
+    color:#e2e8f0;
+}
+
+body.dark input,
+body.dark textarea,
+body.dark select{
+    background:#0f172a;
+    color:#e2e8f0;
+    border:1px solid #334155;
+}
+
+body.dark .chat-box{
+    background:#0f172a;
+}
+
+body.dark .tag{
+    background:#334155;
+}
+
+body.dark .topo{
+    background:#020617;
+}
+
+body.dark .menu-lateral{
+    background:#020617;
+}
+
+/* ================= ANALISE GRID ================= */
+
+.grid-analise{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+}
+
+
+/* TOPO */
+.top-analise{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.btn-reset{
+    background:#475569;
+}
+
+.btn-reset:hover{
+    background:#64748b;
+}
+
+/* ================= CARD ================= */
+
+.cardAnalise{
+    background:#28354b; /* suavizado */
+    border:1px solid #334155;
+    border-radius:10px;
+    padding:8px;
+    color:#e2e8f0;
+}
+
+/* ================= TITULO ================= */
+
+.card-topo{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+.card-topo strong{
+    color:#60a5fa; /* azul mais leve */
+}
+
+/* ================= BOTÕES ================= */
+
+.card-topo .acoes button{
+    padding:5px 10px;
+    font-size:12px;
+}
+
+
+.btn-copiar:hover{
+    background:#22c55e;
+}
+
+.btn-limpar:hover{
+    background:#ef4444;
+}
+
+/* ================= CAMPOS ================= */
+
+.cardAnalise select,
+.cardAnalise textarea,
+.cardAnalise input{
+    background:#0f172a; /* mais leve que o anterior */
+    color:#e2e8f0;
+    border:1px solid #334155;
+}
+
+/* ================= TEXTAREA ================= */
+
+.cardAnalise textarea{
+    min-height:90px;
+}
+
+/* ================= TAG ================= */
+
+.cardAnalise .tag{
+    background:#334155;
+}
+
+/* ================= MENU ATIVO ================= */
+
+.menu-lateral button.active{
+    background:#1e293b;
+    border-left:3px solid #3b82f6;
+}
+
+
+/* LOGO NO MENU */
+.logo-menu{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:20px 15px;
+    border-bottom:1px solid #e1e4eb;
+}
+
+.logo-menu strong{
+    display:block;
+    font-size:16px;
+    color:#e2e8f0;
+}
+
+.logo-menu span{
+    font-size:12px;
+    color:#94a3b8;
+}
+
+/* modo escuro */
+body.dark .logo-menu{
+    border-bottom:1px solid #334155;
+}
+
+.menu-lateral{
+    overflow-y:auto;
+}
+
+.logo-menu{
+    padding:20px;
+    border-bottom:1px solid #1e293b;
+}
+
+.logo-menu strong{
+    display:block;
+    font-size:18px;
+    color:#fff;
+    letter-spacing:2px;
+}
+
+.logo-menu span{
+    font-size:12px;
+    color:#94a3b8;
+}
+
+/* TEXTO (Diploma, Histórico...) */
+.linha-campo label{
+    font-size:12px;
+    color:#6ea3d8;
+    min-width:110px;
+}
+
+/* SELECT */
+.linha-campo select{
+    flex:1;
+    padding:4px 6px;
+    font-size:12px;
+}
+
+.item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+
+.item label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    min-width:130px; /* 🔥 controla alinhamento */
+    font-size:13px;
+    color:#94a3b8;
+    font-weight:600;
+}
+
+.item select{
+    flex:1;
+    min-width:0; /* 🔥 evita quebra estranha */
+}
+
+
+.cardAnalise .item label{
+    font-weight:600;   /* deixa em negrito */
+    color:#94a3b8;     /* cinza suave (melhor que azul forte) */
+    font-size:13px;
+}
+
+.cardAnalise .item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+}
+
+.cardAnalise .item label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:600;
+    color:#94a3b8;
+    font-size:13px;
+    min-width:150px;
+}
+
+/* SVG */
+.cardAnalise .item label svg{
+    width:14px;
+    height:14px;
+    stroke:#60a5fa;
+    fill:none;
+    stroke-width:2;
+}
+
+/* SELECT */
+.cardAnalise select{
+    flex:1;
+}
+
+/* ================= ANALISE UNICA ================= */
+
+/* GRID 3 COLUNAS */
+.grid-unica{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+}
+
+/* CARD */
+.card-item{
+    background:#2a3446;
+    border:1px solid #3a465a;
+    border-radius:10px;
+    padding:12px;
+}
+
+/* HOVER */
+.card-item:hover{
+    border-color:#4f6aa3;
+}
+
+/* TITULO */
+.item-topo{
+    font-size:13px;
+    font-weight:600;
+    color:#94a3b8;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+/* SELECT */
+.card-item select{
+    width:100%;
+    padding:7px 8px;
+    font-size:13px;
+    background:#0f172a;
+    border:1px solid #3a465a;
+    border-radius:6px;
+    color:#e2e8f0;
+}
+
+/* FINAL */
+.box-final{
+    margin-top:15px;
+    display:flex;
+    gap:12px;
+}
+
+/* BOTÕES */
+.acoes-unica{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.acoes-unica button{
+    width:150px;
+    height:45px;
+}
+
+/* BOTÕES PADRÃO */
+.btn-copiar{
+    background:#3b82f6;
+}
+
+.btn-copiar:hover{
+    background:#2563eb;
+}
+
+.btn-limpar{
+    background:#dc2626;
+}
+
+.btn-limpar:hover{
+    background:#b91c1c;
+}
+
+/* TEXTAREA */
+.box-final textarea{
+    flex:1;
+    min-height:140px;
+    padding:10px;
+    background:#0f172a;
+    border:1px solid #3a465a;
+    border-radius:8px;
+    color:#e2e8f0;
+}
+
+/* FIX TAMANHO DOS ICONES */
+.item-topo svg,
+.item label svg{
+    width:14px;
+    height:14px;
+    min-width:14px; /* evita esticar */
+    max-width:14px;
+    flex-shrink:0;
+
+    stroke:#94a3b8;
+    fill:none;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+/* FIX FINAL */
+.item-topo svg,
+.item label svg{
+    width:14px;
+    height:14px;
+    min-width:14px;
+    max-width:14px;
+    flex-shrink:0;
+
+    stroke:#94a3b8;
+    fill:none;
+    stroke-width:1.8;
+}

@@ -1,0 +1,1090 @@
+// ================= CONTROLE DE TELAS =================
+function abrir(id, btn){
+
+    document.querySelectorAll('.card').forEach(el=>{
+        el.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.menu-lateral button').forEach(b=>{
+        b.classList.remove('active');
+    });
+
+    let tela = document.getElementById(id);
+    if(tela) tela.classList.remove('hidden');
+
+    if(btn){
+        btn.classList.add('active');
+    }
+
+    if(id === 'analiseUnica'){
+        montarAnaliseUnica();
+    }
+
+    if(id === 'analiseSimultanea'){
+        montarAnaliseSimultanea();
+    }
+
+    // 🔥 ADICIONE ISSO AQUI
+    if(id === 'admin'){
+        carregarUsuarios();
+    }
+}
+
+// ================= LOGOUT =================
+function logout(){
+    window.location = "/logout";
+}
+
+// ================= DARK MODE =================
+function toggleDark(){
+    document.body.classList.toggle("dark");
+
+    if(document.body.classList.contains("dark")){
+        localStorage.setItem("dark","1");
+    }else{
+        localStorage.removeItem("dark");
+    }
+}
+
+window.onload = function(){
+    if(localStorage.getItem("dark")){
+        document.body.classList.add("dark");
+    }
+}
+
+// ================= DATA =================
+function atualizarHora(){
+    let el = document.getElementById("dataHora");
+    if(!el) return;
+
+    setInterval(()=>{
+        let agora = new Date();
+        el.innerHTML = agora.toLocaleString();
+    },1000);
+}
+
+// ================= COPIAR =================
+function copiarTexto(id){
+    let el = document.getElementById(id);
+    if(!el) return;
+
+    let texto = el.value;
+
+    navigator.clipboard.writeText(texto)
+    .then(()=>alert("Copiado com sucesso"))
+    .catch(()=>alert("Erro ao copiar"));
+}
+
+// ================= CHAT =================
+let ultimaQtdMsg = 0;
+
+function enviarChat(){
+
+    let input = document.getElementById("chatInput") || document.getElementById("chatInput2");
+    if(!input) return;
+
+    let msg = input.value.trim();
+    if(!msg) return;
+
+    fetch("/chat_enviar",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({mensagem:msg})
+    })
+    .then(()=>{
+        input.value="";
+        carregarChat();
+    });
+}
+
+function carregarChat(){
+
+    fetch("/chat_listar")
+    .then(r=>r.json())
+    .then(lista=>{
+
+        let div1 = document.getElementById("chatMensagens");
+        let div2 = document.getElementById("chatMensagens2");
+
+        let html = "";
+
+        lista.slice(-50).forEach(m=>{
+            html += `<div><b>${m.usuario}</b> (${m.hora})<br>${m.mensagem}</div>`;
+        });
+
+        if(div1) div1.innerHTML = html;
+        if(div2) div2.innerHTML = html;
+
+        if(lista.length > ultimaQtdMsg){
+            mostrarNotificacao();
+        }
+
+        ultimaQtdMsg = lista.length;
+    });
+}
+
+function mostrarNotificacao(){
+    let notif = document.getElementById("notif");
+    if(!notif) return;
+
+    notif.classList.remove("hidden");
+
+    setTimeout(()=>{
+        notif.classList.add("hidden");
+    },3000);
+}
+
+// ================= BASE =================
+const DESPACHOS = {
+
+    // ================= DIPLOMA =================
+    diploma_sistec:{
+        titulo:"Diploma sem validação no SISTEC/MEC",
+        texto:`O seu diploma não está registrado no SISTEC/MEC. Por isso, solicitamos que entre em contato com a sua instituição de ensino para que o cadastro seja realizado no sistema do MEC. Caso necessário, requisitamos à instituição um ofício que ratifique os documentos apresentados.`
+    },
+
+    diploma_antigo:{
+        titulo:"Diploma emitido antes da criação do SISTEC",
+        texto:`Identificamos que seu diploma não se encontra cadastrado no SISTEC/MEC, devido à sua emissão ter sido anterior à criação deste sistema pelo Ministério da Educação (MEC) em 2009, conforme estabelecido pela Resolução CNE/CEB nº 3/2009. Solicitamos que entre em contato com a instituição de ensino responsável e solicite o cadastro do mesmo junto ao sistema do MEC ou que encaminhe um documento (declaração de veracidade/ofício) informando a confirmação de aluno egresso ao e-mail dercpf@crt02.gov.br. Adicionalmente, entraremos em contato solicitando que a instituição de ensino emita um ofício para ratificar os documentos, se porventura necessário.`
+    },
+
+    diploma_incompleto:{
+        titulo:"Diploma incompleto",
+        texto:`Diploma do curso técnico deve ser enviado frente e verso.`
+    },
+
+    diploma_ilegivel:{
+        titulo:"Diploma ilegível",
+        texto:`Diploma do curso técnico está com os dados ilegíveis, portanto encaminhar diploma do curso técnico frente e verso em uma imagem de melhor qualidade.`
+    },
+
+    diploma_curso_diferente:{
+        titulo:"Curso diferente",
+        texto:`Comunicamos que o curso apresentado no diploma não corresponde com a nomenclatura do curso apresentada no SISTEC/MEC. Sendo assim, solicitamos que entre em contato com a instituição de ensino e peça a correção. Estamos aguardando o retorno das informações acerca dos dados apresentados.`
+    },
+
+    diploma_codigo_diferente:{
+        titulo:"Código diferente",
+        texto:`Comunicamos que o código apresentado no diploma não corresponde com o código no SISTEC/MEC. Sendo assim, solicitamos que entre em contato com a instituição de ensino e peça a correção. Estamos aguardando o retorno das informações acerca dos dados apresentados.`
+    },
+
+    diploma_instituicao_extinta:{
+        titulo:"Instituição deixou de existir",
+        texto:`Tendo em vista que a instituição de ensino em que se formou deixou de existir, conforme a resolução 141/2021, Art.12º §1, do qual informa que em casos que as escolas que já não existam, caberá ao profissional buscar os meios legais para obter tais documentos, através das Secretarias Estaduais de Educação que deverão encaminhar o documento (declaração de veracidade/ofício) informando a confirmação de aluno egresso ao e-mail dercpf@crt02.gov.br. Portanto o protocolo ficará aberto dentre o prazo de 30 dias aguardando resposta, se o processo de documentação demorar além do prazo, poderá entrar em contato com o telefone (98) 98279-0023 solicitando a reabertura do protocolo.`
+    },
+
+    diploma_carga_horaria:{
+        titulo:"Carga horária inferior",
+        texto:`O diploma do curso técnico deve atender à carga horária mínima exigida pelo Catálogo Nacional de Cursos Técnicos (CNCT), conforme a Resolução CNE/CP nº 1, de 5 de janeiro de 2021.`
+    },
+
+    diploma_nao_tecnico:{
+        titulo:"Diploma não é de curso técnico",
+        texto:`O diploma apresentado não é considerado diploma de curso técnico, por não atender às diretrizes da Educação Profissional Técnica de Nível Médio estabelecidas pelo MEC, conforme a Resolução CNE/CP nº 1, de 5 de janeiro de 2021, e o Catálogo Nacional de Cursos Técnicos (CNCT).`
+    },
+
+    diploma_print:{
+        titulo:"Captura de tela",
+        texto:`Captura de tela não é aceito, portanto encaminhe o documento do diploma do curso técnico frente e verso.`
+    },
+
+    // ================= DECLARAÇÃO =================
+    declaracao_egresso:{
+        titulo:"Declaração de egresso",
+        texto:`Encaminhamos uma solicitação de informação de aluno egresso para a instituição de ensino e estamos aguardando o retorno das informações.`
+    },
+
+    declaracao_desatualizada:{
+        titulo:"Declaração desatualizada",
+        texto:`Encaminhe uma declaração de conclusão de curso atualizada com data válida.`
+    },
+
+    // ================= HISTÓRICO =================
+    historico_completo:{
+        titulo:"Histórico completo e assinado",
+        texto:`Histórico do curso técnico completo contendo todas as páginas e assinado pela instituição de ensino.`
+    },
+
+    historico_divergente:{
+        titulo:"Divergência entre histórico e diploma",
+        texto:`O curso informado no histórico escolar diverge do curso constante no diploma. Recomenda-se contatar a instituição de ensino para que sejam realizadas as devidas correções.`
+    },
+
+    historico_ilegivel:{
+        titulo:"Histórico ilegível",
+        texto:`O histórico do curso técnico apresentado está com os dados ilegíveis, portanto encaminhe novamente o histórico do curso técnico em uma imagem de melhor qualidade.`
+    },
+
+    historico_print:{
+        titulo:"Captura de tela",
+        texto:`Captura de tela não é aceito, portanto encaminhe o documento do histórico do curso técnico.`
+    },
+
+    // ================= IDENTIDADE =================
+    id_frente_verso:{
+        titulo:"Documento frente e verso",
+        texto:`Documento de identificação com foto deve ser enviado frente e verso.`
+    },
+
+    id_foto_antiga:{
+        titulo:"Foto desatualizada",
+        texto:`Sua carteira de identidade civil (RG) contém foto desatualizada. Devido ao decurso do tempo, a foto do documento não expressa a identificação da pessoa que o porta, portanto não poderá ser aceito. Solicitamos o envio de outro documento de identificação com foto válido em todo o Território Nacional.`
+    },
+
+    id_ilegivel:{
+        titulo:"Documento ilegível",
+        texto:`Seu documento de identificação com foto consta com os dados ilegíveis, portanto encaminhe novamente o documento em uma imagem de melhor qualidade.`
+    },
+
+    id_print:{
+        titulo:"Print de tela",
+        texto:`Print de tela não é aceito, portanto encaminhe o documento de identificação com foto frente e verso.`
+    },
+
+    id_rg_desatualizado:{
+        titulo:"RG desatualizada",
+        texto:`Sua Carteira de Identidade Civil (RG), com data de expedição em {data} está desatualizada. Apresente um novo documento, de acordo com o Decreto nº 10.977, de 23 de fevereiro de 2022 ou outro documento de identificação com foto válido em todo o Território Nacional.`,
+        precisaData:true
+    },
+
+    // ================= RESIDÊNCIA =================
+    res_desatualizado:{
+        titulo:"Comprovante desatualizado",
+        texto:`O comprovante de residência encaminhado encontra-se desatualizado. Portanto solicitamos que encaminhe um comprovante de residência em seu nome ou no nome dos seus pais com data máxima de 90 dias ou encaminhe uma declaração de residência de próprio punho preenchida pelo solicitante do registro profissional. Link de acesso ao modelo de declaração:
+https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_terceiro:{
+        titulo:"Em nome de terceiro",
+        texto:`O comprovante de residência encaminhado encontra-se em nome de terceiros. Portanto solicitamos que encaminhe um comprovante de residência em seu nome ou no nome dos seus pais com data máxima de 90 dias ou encaminhe uma declaração de residência de próprio punho preenchida pelo solicitante do registro profissional. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_nota:{
+        titulo:"Nota fiscal não é aceito",
+        texto:`Nota fiscal não é aceito como comprovante de residência. Portanto encaminhe um comprovante de residência em seu nome ou no nome dos seus pais com data máxima de 90 dias ou encaminhe uma declaração de residência de próprio punho preenchida pelo solicitante do registro profissional. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_declaracao_errada:{
+        titulo:"Declaração assinada por terceiro",
+        texto:`A declaração de residência deve ser preenchida e assinada pelo próprio solicitante. Não é necessário que outra pessoa ateste ou confirme que o solicitante reside no endereço informado. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_print:{
+        titulo:"Print de tela",
+        texto:`Print de tela não é aceito, portanto encaminhe o documento do comprovante de residência atualizado.`
+    },
+
+    res_declaracao_incompleta:{
+        titulo:"Declaração incompleta",
+        texto:`A declaração de residência deve ser corretamente preenchida, contendo todos os dados obrigatórios, como CEP, logradouro, data, local e assinatura do solicitante. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_ilegivel:{
+        titulo:"Comprovante ilegível",
+        texto:`Comprovante de residência consta com os dados de endereço ilegíveis, portanto encaminhe novamente o documento em uma imagem de melhor qualidade.`
+    },
+
+    res_pagamento:{
+        titulo:"Comprovante de pagamento",
+        texto:`Comprovante de pagamento não é aceito como comprovante de residência. Portanto encaminhe um comprovante de residência em seu nome ou no nome dos seus pais com data máxima de 90 dias ou encaminhe uma declaração de residência de próprio punho preenchida pelo solicitante do registro profissional. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    res_sem:{
+        titulo:"Sem comprovante",
+        texto:`Encaminhe um comprovante de residência em seu nome ou no nome dos seus pais com data máxima de 90 dias ou encaminhe uma declaração de residência de próprio punho preenchida pelo solicitante do registro profissional. Link de acesso ao modelo de declaração: https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=sharing`
+    },
+
+    // ================= FOTO =================
+    foto_padrao:{
+        titulo:"Foto desatualizada",
+        texto:`A foto deverá estar no formato 3x4, atualizada e seguindo o padrão de fotografia para a documentação. O rosto deve estar em evidência, ombros alinhados, fundo branco, boa qualidade de imagem e sem sombras. Segue o modelo de fotografia exigido: https://drive.google.com/file/d/12Gb2_DKVXMYQGj2_UTPm3RYa1Sae-BAs/view?usp=sharing`
+    },
+
+    // ================= TÍTULO DE ELEITOR =================
+    titulo_incompleto:{
+        titulo:"Título de eleitor incompleto",
+        texto:`O título de eleitor deve ser encaminhado frente e verso.`
+    },
+
+    titulo_print:{
+        titulo:"Print não aceito",
+        texto:`Captura de tela não é aceita. Encaminhe o documento completo.`
+    },
+
+    // ================= CERTIDÃO ELEITORAL =================
+    eleitor_ausencia:{
+        titulo:"Ausência às urnas",
+        texto:`A Certidão de Quitação Eleitoral apresentada informa que você não está quite com a justiça eleitoral devido a ausência às urnas. Portanto verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    eleitor_desatualizado:{
+        titulo:"Desatualização",
+        texto:`A Certidão de Quitação Eleitoral apresentada está desatualizada portanto, verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    eleitor_print:{
+        titulo:"Captura de tela não é aceito",
+        texto:`Print de tela não é aceito, portanto encaminhe o documento do título de eleitor frente e verso.`
+    },
+
+    eleitor_comprovante:{
+        titulo:"Comprovante de votação não é aceito",
+        texto:`Comprovante de votação não é aceito como certidão de quitação eleitoral. Portanto verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    eleitor_requerimento:{
+        titulo:"Requerimento de Votação não é aceito",
+        texto:`Requerimento de Votação não é aceito como certidão de quitação eleitoral. Portanto verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    eleitor_crimes:{
+        titulo:"Certidão de crimes eleitorais não é aceito",
+        texto:`Certidão de crimes eleitorais não é aceito como certidão de quitação eleitoral. Portanto verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    eleitor_antecedentes:{
+        titulo:"Certidão de antecedentes criminais não é aceito",
+        texto:`Certidão de antecedentes criminais não é aceito como certidão de quitação eleitoral. Portanto verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
+    },
+
+    // ================= MILITAR =================
+    militar_sem:{
+        titulo:"Documento não apresentado",
+        texto:`Apresente documento que comprove a regularidade com o serviço militar.`
+    },
+
+    militar_invalido:{
+        titulo:"Documento inválido",
+        texto:`O documento militar apresentado está inválido. Encaminhe documento atualizado.`
+    },
+
+    militar_sem_carimbo:{
+        titulo:"Sem carimbo",
+        texto:`O documento militar não possui os carimbos obrigatórios. Regularize junto ao órgão competente.`
+    },
+
+    militar_print:{
+        titulo:"Print não aceito",
+        texto:`Captura de tela não é aceita como documento militar.`
+    }
+
+};
+
+// ================= ESTADO =================
+let selecoesUnica = [];
+let selecoesSim = {};
+
+// ================= ANALISE UNICA =================
+
+const ICONES = {
+
+    diploma: `
+    <svg viewBox="0 0 24 24">
+        <path d="M6 2h9l5 5v15H6z"/>
+        <path d="M9 9h6M9 13h6M9 17h4"/>
+    </svg>
+    `,
+
+    declaracao: `
+    <svg viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4z"/>
+        <path d="M8 8h8M8 12h8M8 16h5"/>
+    </svg>
+    `,
+
+    historico: `
+    <svg viewBox="0 0 24 24">
+        <path d="M3 5h18v14H3z"/>
+        <path d="M7 9h10M7 13h10"/>
+    </svg>
+    `,
+
+    id: `
+    <svg viewBox="0 0 24 24">
+        <rect x="2" y="6" width="20" height="12"/>
+        <circle cx="8" cy="12" r="2"/>
+        <path d="M12 10h6M12 14h4"/>
+    </svg>
+    `,
+
+    foto: `
+    <svg viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="14"/>
+        <circle cx="12" cy="12" r="3"/>
+    </svg>
+    `,
+
+    titulo: `
+    <svg viewBox="0 0 24 24">
+        <path d="M3 6h18v12H3z"/>
+        <path d="M8 10h8M8 14h5"/>
+    </svg>
+    `,
+
+    eleitor: `
+    <svg viewBox="0 0 24 24">
+        <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    `,
+
+    res: `
+    <svg viewBox="0 0 24 24">
+        <path d="M3 10L12 3l9 7v10H3z"/>
+    </svg>
+    `,
+
+    militar: `
+    <svg viewBox="0 0 24 24">
+        <path d="M12 2l3 6 6 .9-4.5 4.4 1 6.7-5.5-3-5.5 3 1-6.7L3 8.9 9 8z"/>
+    </svg>
+    `
+};
+
+function montarAnaliseUnica(){
+
+    selecoesUnica = [];
+
+    let area = document.getElementById("areaUnica");
+
+    area.innerHTML = `
+
+    <div class="card-topo">
+        <strong>PROFISSIONAL</strong>
+
+        <div class="acoes">
+            <button class="btn-copiar" onclick="copiarTexto('saidaUnica')">COPIAR</button>
+            <button class="btn-limpar" onclick="limparAnaliseUnica()">LIMPAR</button>
+        </div>
+    </div>
+
+    <input id="nomeUnico" placeholder="Nome do profissional" oninput="atualizarUnica()">
+
+    <div id="listaUnica" class="tags"></div>
+
+    <!-- CAMPOS -->
+    <div class="grid-unica">
+
+        ${campoUnico("Diploma","diploma",`
+        <svg viewBox="0 0 24 24">
+        <path d="M6 2h9l5 5v15H6z"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Declaração","declaracao",`
+        <svg viewBox="0 0 24 24">
+        <path d="M6 2h12v20H6z"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Histórico","historico",`
+        <svg viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4z"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Identidade","id",`
+        <svg viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14"/>
+        <circle cx="8" cy="12" r="2"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Foto","foto",`
+        <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Tít. Eleitor","titulo",`
+        <svg viewBox="0 0 24 24">
+        <path d="M3 6h18v12H3z"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Quitação Eleitoral","eleitor",`
+        <svg viewBox="0 0 24 24">
+        <path d="M20 6L9 17l-5-5"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Residência","res",`
+        <svg viewBox="0 0 24 24">
+        <path d="M3 10L12 3l9 7v10H3z"/>
+        </svg>
+        `)}
+
+        ${campoUnico("Serv. Militar","militar",`
+        <svg viewBox="0 0 24 24">
+        <path d="M12 2l3 6 6 .9-4.5 4.4 1 6.7-5.5-3-5.5 3 1-6.7L3 8.9 9 8z"/>
+        </svg>
+        `)}
+
+    </div>
+
+    <textarea id="saidaUnica" placeholder="Selecione as pendências..."></textarea>
+    `;
+}
+
+function campoUnico(nome,tipo,icone){
+    return `
+    <div class="item">
+
+        <label>
+            ${icone}
+            <strong>${nome}</strong>
+        </label>
+
+        <select onchange="addTextoUnico(this)">
+            <option value="">Selecionar</option>
+
+            ${Object.entries(DESPACHOS)
+                .filter(([k])=>k.startsWith(tipo + "_"))
+                .map(([k,v])=>`<option value="${k}">${v.titulo}</option>`)
+                .join("")}
+
+        </select>
+
+    </div>`;
+}
+
+
+function addTextoUnico(sel){
+
+    let key = sel.value;
+    if(!key) return;
+
+    let item = DESPACHOS[key];
+
+    if(item.precisaData){
+        abrirModalData((data)=>{
+            let texto = item.texto.replace("{data}",data);
+            adicionarItemUnico(item.titulo,texto);
+        });
+    }else{
+        adicionarItemUnico(item.titulo,item.texto);
+    }
+
+    sel.selectedIndex = 0;
+}
+
+function atualizarUnica(){
+
+    let nomeEl = document.getElementById("nomeUnico");
+    let area = document.getElementById("saidaUnica");
+    let lista = document.getElementById("listaUnica");
+
+    if(!area || !lista) return;
+
+    let nome = nomeEl ? nomeEl.value : "";
+
+    // TAGS
+    lista.innerHTML = selecoesUnica.map((item,i)=>`
+        <div class="tag">
+            ${item.titulo} 
+            <b onclick="removerUnica(${i})">x</b>
+        </div>
+    `).join("");
+
+    // TEXTO BASE
+    let texto = `Prezado(a) ${nome},\n\n`;
+
+    if(selecoesUnica.length > 0){
+
+        texto += "Após análise da solicitação, foram identificadas as seguintes pendências:\n\n";
+
+        selecoesUnica.forEach((item,i)=>{
+
+            let base = item.texto.trim();
+
+            // remove ponto final se existir
+            if(base.endsWith(".")){
+                base = base.slice(0, -1);
+            }
+
+            // ultimo item = ponto
+            let final = (i === selecoesUnica.length - 1) ? "." : ";";
+
+            texto += `${i+1}. ${base}${final}\n\n`;
+        });
+
+        texto += "Dessa forma, solicitamos o envio da documentação pendente para continuidade da análise da solicitação.";
+    }
+
+    area.value = texto;
+}
+
+function removerUnica(i){
+    selecoesUnica.splice(i,1);
+    atualizarUnica();
+}
+
+function limparAnaliseUnica(){
+
+    selecoesUnica = [];
+
+    let nome = document.getElementById("nomeUnico");
+    let area = document.getElementById("saidaUnica");
+    let lista = document.getElementById("listaUnica");
+
+    if(nome) nome.value="";
+    if(area) area.value="";
+    if(lista) lista.innerHTML="";
+}
+
+function adicionarItemUnico(titulo,texto){
+
+    if(selecoesUnica.find(i=>i.titulo===titulo)) return;
+
+    selecoesUnica.push({titulo,texto});
+    atualizarUnica();
+}
+
+// ================= ANALISE SIMULTANEA =================
+function montarAnaliseSimultanea(){
+
+    let container = document.getElementById("containerAnalise");
+    container.innerHTML = "";
+
+    for(let i=1;i<=6;i++){ // 🔥 AGORA SÃO 6
+
+        selecoesSim[i]=[];
+
+        let div = document.createElement("div");
+        div.className="cardAnalise";
+
+        div.innerHTML=`
+        
+        <div class="card-topo">
+            <strong>PROFISSIONAL ${i}</strong>
+
+            <div class="acoes">
+                <button class="btn-copy" onclick="copiarTexto('saida${i}')">COPIAR</button>
+                <button class="btn-clear" onclick="limparSim(${i})">LIMPAR</button>
+            </div>
+        </div>
+
+        <input id="nome${i}" placeholder="Nome" oninput="atualizarSim(${i})">
+
+        <div id="lista${i}" class="tags"></div>
+
+        ${campoSim(i,"Diploma","diploma")}
+        ${campoSim(i,"Declaração","declaracao")}
+        ${campoSim(i,"Histórico","historico")}
+        ${campoSim(i,"Identidade","id")}
+        ${campoSim(i,"Foto","foto")}
+        ${campoSim(i,"Residência","res")}
+        ${campoSim(i,"Título de Eleitor","titulo")}
+        ${campoSim(i,"Quitação Eleitoral","eleitor")}
+        ${campoSim(i,"Militar","militar")}
+
+        <textarea id="saida${i}" placeholder="Selecione as pendências..."></textarea>
+        `;
+
+        container.appendChild(div);
+    }
+}
+
+function campoSim(i,nome,tipo){
+    return `
+    <div class="item">
+        <label>
+            ${icone(tipo)}
+            <span>${nome}</span>
+        </label>
+        <select onchange="addTextoSim(this,${i})">
+            <option value="">Selecionar</option>
+            ${Object.entries(DESPACHOS)
+                .filter(([k]) => k.startsWith(tipo)) // 🔥 CORRIGIDO
+                .map(([k,v])=>`<option value="${k}">${v.titulo}</option>`)
+                .join("")}
+        </select>
+    </div>`;
+}
+
+function icone(tipo){
+
+    const icones = {
+
+        diploma:`<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>`,
+
+        declaracao:`<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/></svg>`,
+
+        historico:`<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>`,
+
+        id:`<svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zM7 10h4"/></svg>`,
+
+        foto:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>`,
+
+        res:`<svg viewBox="0 0 24 24"><path d="M3 10L12 3l9 7v10H3z"/></svg>`,
+
+        titulo:`<svg viewBox="0 0 24 24"><path d="M6 2h12v20H6z"/></svg>`,
+
+        eleitor:`<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>`,
+
+        militar:`<svg viewBox="0 0 24 24"><path d="M12 2l8 4-8 4-8-4z"/></svg>`
+    };
+
+    return icones[tipo] || "";
+}
+function addTextoSim(sel,i){
+
+    let key = sel.value;
+    if(!key) return;
+
+    let item = DESPACHOS[key];
+
+    if(item.precisaData){
+        abrirModalData((data)=>{
+            let texto = item.texto.replace("{data}",data);
+            adicionarItemSim(i,item.titulo,texto);
+        });
+    }else{
+        adicionarItemSim(i,item.titulo,item.texto);
+    }
+
+    sel.selectedIndex=0;
+}
+
+function adicionarItemSim(i,titulo,texto){
+
+    if(selecoesSim[i].find(x=>x.titulo===titulo)) return;
+
+    selecoesSim[i].push({titulo,texto});
+    atualizarSim(i);
+}
+
+function atualizarSim(i){
+
+    let nome = document.getElementById("nome"+i)?.value || "";
+    let area = document.getElementById("saida"+i);
+    let lista = document.getElementById("lista"+i);
+
+    if(!area || !lista) return;
+
+    let arr = selecoesSim[i];
+
+    // TAGS
+    lista.innerHTML = arr.map((item,index)=>`
+        <div class="tag">${item.titulo} <b onclick="removerSim(${i},${index})">x</b></div>
+    `).join("");
+
+    let texto = `Prezado(a) ${nome},\n\n`;
+
+    if(arr.length > 0){
+
+        texto += "Após análise da solicitação, foram identificadas as seguintes pendências:\n\n";
+
+        arr.forEach((item,index)=>{
+
+            let base = item.texto.trim();
+
+            // remove ponto final
+            if(base.endsWith(".")){
+                base = base.slice(0, -1);
+            }
+
+            let final = (index === arr.length - 1) ? "." : ";";
+
+            texto += `${index+1}. ${base}${final}\n\n`;
+
+        });
+
+        texto += "Dessa forma, solicitamos o envio da documentação pendente para continuidade da análise da solicitação.";
+
+    }
+
+    area.value = texto;
+}
+
+function removerSim(i,index){
+    selecoesSim[i].splice(index,1);
+    atualizarSim(i);
+}
+
+function limparSim(i){
+
+    selecoesSim[i] = [];
+
+    let nome = document.getElementById("nome"+i);
+    let area = document.getElementById("saida"+i);
+    let lista = document.getElementById("lista"+i);
+
+    if(nome) nome.value="";
+    if(area) area.value="";
+    if(lista) lista.innerHTML="";
+}
+
+function limparTudoSim(){
+    for(let i=1;i<=6;i++){
+        limparSim(i);
+    }
+}
+
+// ================= INIT =================
+window.onload = function(){
+    atualizarHora();
+    montarAnaliseUnica();
+    montarAnaliseSimultanea();
+    setInterval(carregarChat,2000);
+    carregarChat();
+}
+
+// ================= MODAL DATA =================
+let callbackData = null;
+
+function abrirModalData(callback){
+    callbackData = callback;
+
+    let modal = document.getElementById("modalData");
+    let input = document.getElementById("inputData");
+
+    if(input) input.value = "";
+
+    if(modal) modal.classList.remove("hidden");
+
+    setTimeout(()=>{
+        if(input){
+            input.focus();
+
+            input.onkeydown = function(e){
+                if(e.key === "Enter"){
+                    confirmarData();
+                }
+            }
+        }
+    },100);
+}
+
+function fecharModal(){
+    let modal = document.getElementById("modalData");
+    if(modal) modal.classList.add("hidden");
+}
+
+function confirmarData(){
+
+    let input = document.getElementById("inputData");
+    if(!input) return;
+
+    let valor = input.value.replace(/\D/g,'');
+
+    if(valor.length !== 8){
+        alert("Digite 8 números.");
+        return;
+    }
+
+    let data = valor.replace(/(\d{2})(\d{2})(\d{4})/,"$1/$2/$3");
+
+    fecharModal();
+
+    if(callbackData) callbackData(data);
+}
+
+// fechar clicando fora
+function fecharModalFora(e){
+    if(e.target.id === "modalData"){
+        fecharModal();
+    }
+}
+
+// ================= ABERTURA DE TELAS =================
+
+function abrirAnaliseUnica(){
+    abrir('analiseUnica');
+    montarAnaliseUnica();
+}
+
+function abrirAnaliseSimultanea(){
+    abrir('analiseSimultanea');
+    montarAnaliseSimultanea();
+}
+
+function abrirDeferUnico(){
+    abrir('deferimentoUnico');
+}
+
+function abrirDeferSimultaneo(){
+    abrir('deferimentoSimultaneo');
+}
+
+console.log("JS carregado");
+
+function gerarDefer(){
+
+    let curso = document.getElementById("curso")?.value;
+    let tipo = document.getElementById("tipo")?.value;
+    let area = document.getElementById("saidaDefer");
+
+    if(!curso || !tipo) return;
+
+    fetch("/deferimento", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            curso: curso,
+            tipo: tipo
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        area.value = res.texto || "Erro ao gerar texto.";
+    })
+    .catch(() => {
+        area.value = "Erro ao conectar com o servidor.";
+    });
+}
+
+// ================= ADMIN =================
+
+function carregarUsuarios(){
+
+    fetch("/listar_usuarios")
+    .then(r=>r.json())
+    .then(lista=>{
+
+        let tabela = document.getElementById("tabelaUsuarios");
+        if(!tabela) return;
+
+        tabela.innerHTML = `
+        <tr>
+            <th>Usuário</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+        `;
+
+        lista.forEach(u=>{
+
+            let status = u.ativo ? "Ativo" : "Inativo";
+
+            tabela.innerHTML += `
+            <tr>
+                <td>${escapeHtml(u.user)}</td>
+                <td>${escapeHtml(u.perfil)}</td>
+                <td>${status}</td>
+
+                <td>
+                    <button onclick="toggleUsuario('${encodeURIComponent(u.user)}')">
+                        ${u.ativo ? "Inativar" : "Ativar"}
+                    </button>
+
+                    <button onclick="alterarSenha('${encodeURIComponent(u.user)}')">
+                        Senha
+                    </button>
+
+                    <button onclick="excluirUsuario('${encodeURIComponent(u.user)}')">
+                        Excluir
+                    </button>
+                </td>
+            </tr>
+            `;
+        });
+
+    });
+}
+
+
+// ================= FUNÇÕES =================
+function escapeHtml(text){
+    return text
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+
+// ATIVAR / INATIVAR
+function toggleUsuario(user){
+
+    user = decodeURIComponent(user);
+
+    fetch("/toggle_usuario",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user:user})
+    })
+    .then(()=>carregarUsuarios());
+}
+
+
+// ALTERAR SENHA
+function alterarSenha(user){
+
+    user = decodeURIComponent(user);
+
+    let nova = prompt("Digite a nova senha:");
+
+    if(!nova) return;
+
+    fetch("/alterar_senha",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            user:user,
+            senha:nova
+        })
+    })
+    .then(()=>{
+        alert("Senha atualizada");
+        carregarUsuarios(); // ✔ atualiza lista
+    });
+}
+
+
+// EXCLUIR
+function excluirUsuario(user){
+
+    user = decodeURIComponent(user);
+
+    if(!confirm("Deseja excluir o usuário?")) return;
+
+    fetch("/excluir_usuario",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user:user})
+    })
+    .then(()=>carregarUsuarios());
+}
+// ================= CADASTRAR USUARIO =================
+function cadastrarUsuario(){
+
+    let user = document.getElementById("novo_user").value.trim();
+    let senha = document.getElementById("nova_senha").value.trim();
+    let perfil = document.getElementById("perfil").value;
+
+    if(!user || !senha){
+        alert("Preencha usuário e senha");
+        return;
+    }
+
+    fetch("/cadastrar_usuario",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            user:user,
+            senha:senha,
+            perfil:perfil
+        })
+    })
+    .then(async r => {
+        let data = await r.json();
+
+        if(!r.ok){
+            throw new Error(data.msg || "Erro no servidor");
+        }
+
+        return data;
+    })
+    .then(res=>{
+        alert(res.msg);
+        carregarUsuarios();
+    })
+    .catch(err=>{
+        alert("Erro: " + err.message);
+        console.error(err);
+    });
+}

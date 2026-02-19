@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Registrados</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+<div id="infoTopo"></div>
+
+<nav>
+<button onclick="window.location.href='/sistema'">⬅ Voltar</button>
+<button onclick="toggleDark()">🌙</button>
+<button onclick="logout()">Sair</button>
+</nav>
+
+</header>
+
+<div class="container">
+
+<!-- ================= TITULO ================= -->
+<div class="card">
+
+<h3>📄 Registros</h3>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+
+<input id="busca" placeholder="Buscar por nome ou protocolo..." oninput="filtrar()">
+
+<button onclick="carregarRegistros()">Atualizar</button>
+
+<button onclick="abrirCadastro()">➕ Novo Registro</button>
+
+</div>
+
+</div>
+
+<!-- ================= TABELA ================= -->
+<div class="card">
+
+<table id="tabelaRegistros">
+
+<thead>
+<tr>
+<th>Protocolo</th>
+<th>Nome do Interessado</th>
+<th>Estado</th>
+<th>Tipo de Registro</th>
+<th>Data do Registro</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+<!-- ================= MODAL CADASTRO ================= -->
+<div id="modalCadastro" class="modal hidden">
+
+<div class="modal-content">
+
+<h3>Novo Registro</h3>
+
+<input id="cad_protocolo" placeholder="Protocolo">
+<input id="cad_nome" placeholder="Nome do interessado">
+<input id="cad_estado" placeholder="Estado">
+
+<select id="cad_tipo">
+<option value="Definitivo">Definitivo</option>
+<option value="Provisório">Provisório</option>
+</select>
+
+<select id="cad_status">
+<option value="Em análise">Em análise</option>
+<option value="Deferido">Deferido</option>
+<option value="Indeferido">Indeferido</option>
+</select>
+
+<div class="acoes">
+<button onclick="salvarRegistro()">Salvar</button>
+<button class="btn-danger" onclick="fecharCadastro()">Cancelar</button>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+
+// ================= MODAL =================
+function abrirCadastro(){
+    document.getElementById("modalCadastro").classList.remove("hidden");
+}
+
+function fecharCadastro(){
+    document.getElementById("modalCadastro").classList.add("hidden");
+}
+
+// ================= SALVAR =================
+function salvarRegistro(){
+
+    let data = {
+        protocolo: document.getElementById("cad_protocolo").value,
+        nome: document.getElementById("cad_nome").value,
+        estado: document.getElementById("cad_estado").value,
+        tipo: document.getElementById("cad_tipo").value,
+        status: document.getElementById("cad_status").value
+    };
+
+    fetch('/registrar',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+    })
+    .then(r=>r.json())
+    .then(()=>{
+        fecharCadastro();
+        carregarRegistros();
+        alert("Registro salvo com sucesso!");
+    });
+}
+
+// ================= LOAD =================
+window.onload = function(){
+    carregarRegistros();
+};
+
+</script>
+
+</body>
+</html>

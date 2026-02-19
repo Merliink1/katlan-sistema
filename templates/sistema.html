@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Sistema</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- ================= TOPO ================= -->
+<header class="topo">
+
+
+<div class="info-user">
+    <span>{{usuario}}</span>
+    <span id="dataHora"></span>
+    <button onclick="toggleDark()">🌙</button>
+    <button onclick="logout()">Sair</button>
+</div>
+
+</header>
+
+<!-- ================= MENU ================= -->
+<div class="menu-lateral">
+
+<!-- LOGO DO SISTEMA -->
+<div class="logo-menu">
+
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="2" width="14" height="20" rx="2" stroke="#1e3a5f" stroke-width="2"/>
+        <path d="M7 6h6M7 10h6M7 14h4" stroke="#1e3a5f" stroke-width="2" stroke-linecap="round"/>
+        <path d="M17 9l2 2 4-4" stroke="#0a7cff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+
+    <div>
+        <strong>ANALYXIS</strong>
+        <span>Plataforma de Análise de Documentos</span>
+    </div>
+
+</div>
+
+<button onclick="abrir('inicio', this)">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M3 10L12 3l9 7v10a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V10z"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+    </svg>
+    Início
+</button>
+
+<div class="menu-hover">
+<button>
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+    </svg>
+    Análise
+</button>
+
+<div class="submenu">
+<button onclick="abrir('analiseUnica', this)">Única</button>
+<button onclick="abrir('analiseSimultanea', this)">Simultânea</button>
+</div>
+</div>
+
+<div class="menu-hover">
+<button>
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M20 6L9 17l-5-5"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+    </svg>
+    Deferimento
+</button>
+
+<div class="submenu">
+    <button onclick="abrir('deferimentoUnico', this)">Único</button>
+    <button onclick="abrir('deferimentoSimultaneo', this)">Simultâneo</button>
+</div>
+</div>
+
+<button onclick="abrir('registrados', this)">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M3 3h18v18H3z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    Registrados
+</button>
+
+<button onclick="abrir('mensagens', this)">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+    </svg>
+    Mensagens <span id="notif" class="hidden">●</span>
+</button>
+
+{% if session.get('perfil') == 'admin' %}
+<button onclick="abrir('admin', this)">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+        <path d="M19.4 15a7.97 7.97 0 0 0 .1-6l2.1-1.6-2-3.4-2.5 1a8 8 0 0 0-5-2l-.5-2h-4l-.5 2a8 8 0 0 0-5 2l-2.5-1-2 3.4L4.5 9a8 8 0 0 0 0 6l-2.1 1.6 2 3.4 2.5-1a8 8 0 0 0 5 2l.5 2h4l.5-2a8 8 0 0 0 5-2l2.5 1 2-3.4z"
+        stroke="currentColor" fill="none" stroke-width="2"/>
+    </svg>
+    Admin
+</button>
+{% endif %}
+
+</div>
+
+<!-- ================= CONTEÚDO ================= -->
+<div class="container">
+
+<!-- ================= INICIO ================= -->
+<div id="inicio" class="card">
+<h2>Visão Geral</h2>
+
+<h2>Bem-vindo, {{usuario}}</h2>
+
+<p class="frase">
+"Organização gera resultados. Consistência gera excelência."
+</p>
+</div>
+
+<!-- ================= ANALISE UNICA ================= -->
+<div id="analiseUnica" class="card hidden">
+<h3>Análise Única</h3>
+<div id="areaUnica"></div>
+</div>
+
+<!-- ================= ANALISE SIMULTANEA ================= -->
+<div id="analiseSimultanea" class="card hidden">
+
+<div class="top-analise">
+    <h3>Análise Simultânea</h3>
+    <button class="btn-reset" onclick="limparTudoSim()">RESETAR TUDO</button>
+</div>
+
+<div id="containerAnalise" class="grid-analise"></div>
+
+</div>
+
+<!-- ================= DEFERIMENTO UNICO ================= -->
+<div id="deferimentoUnico" class="card hidden">
+
+<h3>Deferimento</h3>
+
+<input list="listaCursos" id="curso" placeholder="Curso" oninput="gerarDefer()">
+
+<datalist id="listaCursos">
+{% for c in cursos %}
+<option value="{{c}}">
+{% endfor %}
+</datalist>
+
+<select id="tipo">
+<option value="definitivo">Definitivo</option>
+<option value="provisorio">Provisório</option>
+</select>
+
+<textarea id="saidaDefer"></textarea>
+
+<button onclick="copiarTexto('saidaDefer')">Copiar</button>
+<button class="btn-danger" onclick="limparCampo('saidaDefer')">Limpar</button>
+
+</div>
+
+<!-- ================= DEFERIMENTO SIMULTANEO ================= -->
+<div id="deferimentoSimultaneo" class="card hidden">
+<h3>Deferimento Simultâneo</h3>
+<div id="gridDefer"></div>
+
+</div>
+
+<!-- ================= REGISTRADOS ================= -->
+<div id="registrados" class="card hidden">
+
+<h3>Registrados</h3>
+
+<div class="gridCampos">
+    <input id="protocolo" placeholder="Protocolo">
+    <input id="nome" placeholder="Nome">
+    <input id="estado" placeholder="Estado">
+</div>
+
+<select id="tipo_reg">
+<option>Definitivo</option>
+<option>Provisório</option>
+</select>
+
+<select id="status">
+<option>Deferido</option>
+<option>Indeferido</option>
+<option>Em análise</option>
+<option>Concluído</option>
+</select>
+
+<button onclick="registrar()">Salvar</button>
+
+<table id="tabelaReg"></table>
+
+</div>
+
+<!-- ================= ADMIN ================= -->
+<div id="admin" class="card hidden">
+
+<h3>Administração</h3>
+
+<input id="novo_user" placeholder="Usuário">
+<input id="nova_senha" placeholder="Senha">
+
+<select id="perfil">
+<option value="atendente">Atendente</option>
+<option value="admin">Admin</option>
+</select>
+
+<button onclick="cadastrarUsuario()">Cadastrar</button>
+
+<table id="tabelaUsuarios"></table>
+
+</div>
+
+<!-- ================= MENSAGENS ================= -->
+<div id="mensagens" class="card hidden">
+
+<h3>Mensagens</h3>
+
+<div id="chatMensagens2" class="chat-box"></div>
+
+<input id="chatInput2" placeholder="Digite..." onkeypress="if(event.key==='Enter') enviarChat()">
+<button onclick="enviarChat()">Enviar</button>
+
+</div>
+
+
+<!-- ================= MODAL DATA ================= -->
+<div id="modalData" class="modal hidden" onclick="fecharModalFora(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        
+        <h3>Digite a data</h3>
+
+        <input 
+             id="inputData" 
+             type="text"
+             placeholder="Somente números" 
+             maxlength="8"
+             autocomplete="off"
+             name="data_fake_123"
+             >
+
+        <div style="margin-top:10px;">
+            <button onclick="confirmarData()">OK</button>
+            <button onclick="fecharModal()">Cancelar</button>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+let usuario = "{{usuario}}";
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>
+

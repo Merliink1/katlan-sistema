@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<style>
+
+/* ================= LAYOUT ================= */
+body{
+    height:100vh;
+    display:flex;
+    font-family:"Baskerville","Times New Roman",serif;
+}
+
+/* ================= LADO ESQUERDO ================= */
+.left{
+    width:60%;
+    background:url("{{ url_for('static', filename='img/login.png') }}") no-repeat center;
+    background-size:cover;
+}
+
+/* ================= LADO DIREITO ================= */
+.right{
+    width:40%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:var(--bg);
+}
+
+/* ================= LOGIN BOX ================= */
+.login-box{
+    background:var(--card);
+    padding:35px;
+    border-radius:14px;
+    width:320px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.1);
+    border:1px solid var(--border);
+}
+
+/* ================= TITULO ================= */
+.login-box h2{
+    text-align:center;
+    margin-bottom:20px;
+    color:var(--primary);
+    font-weight:normal;
+}
+
+/* ================= ERRO ================= */
+.erro{
+    background:#ffebee;
+    color:#c62828;
+    padding:10px;
+    border-radius:6px;
+    margin-bottom:12px;
+    font-size:13px;
+    text-align:center;
+}
+
+/* ================= INPUT ================= */
+.login-box input{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:14px;
+    background:var(--card);
+    color:var(--text);
+}
+
+/* ================= BOTÃO ================= */
+.login-box button{
+    width:100%;
+    padding:10px;
+    margin-top:12px;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.login-box button:hover{
+    opacity:0.9;
+}
+
+/* ================= MOSTRAR SENHA ================= */
+.show-pass{
+    font-size:12px;
+    cursor:pointer;
+    margin-top:4px;
+    color:var(--primary);
+}
+
+/* ================= DARK TOGGLE ================= */
+.tema{
+    text-align:center;
+    margin-top:12px;
+    cursor:pointer;
+    font-size:12px;
+    color:var(--primary);
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 900px){
+
+    .left{
+        display:none;
+    }
+
+    .right{
+        width:100%;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ================= LADO ESQUERDO (IMAGEM) ================= -->
+<div class="left"></div>
+
+<!-- ================= LOGIN ================= -->
+<div class="right">
+
+<div class="login-box">
+
+<h2>Acesso</h2>
+
+<!-- ERRO -->
+{% if erro %}
+<div class="erro">{{erro}}</div>
+{% endif %}
+
+<form method="POST" action="/login" id="formLogin">
+
+<input name="user" placeholder="Usuário" required autofocus>
+
+<input name="senha" type="password" id="senha" placeholder="Senha" required>
+
+<div class="show-pass" onclick="toggleSenha()">
+👁 Mostrar senha
+</div>
+
+<button type="submit" id="btnLogin">Entrar</button>
+
+</form>
+
+<div class="tema" onclick="toggleDark()">
+🌙 Alternar tema
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// ================= MOSTRAR SENHA =================
+function toggleSenha(){
+    let campo = document.getElementById("senha");
+    campo.type = campo.type === "password" ? "text" : "password";
+}
+
+// ================= DARK MODE =================
+function toggleDark(){
+
+    document.body.classList.toggle("dark");
+
+    localStorage.setItem(
+        "tema",
+        document.body.classList.contains("dark") ? "dark" : "light"
+    );
+}
+
+// ================= LOAD =================
+window.onload = function(){
+
+    if(localStorage.getItem("tema") === "dark"){
+        document.body.classList.add("dark");
+    }
+}
+
+// ================= LOADING =================
+document.getElementById("formLogin").addEventListener("submit", function(){
+
+    let btn = document.getElementById("btnLogin");
+
+    btn.innerText = "Entrando...";
+    btn.disabled = true;
+
+});
+
+</script>
+
+</body>
+</html>
