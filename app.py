@@ -19,17 +19,17 @@ ARQ_ACESSOS = os.path.join(DATA_PATH, "acessos.json")
 ARQ_ANALISES = os.path.join(DATA_PATH, "historico.json")
 ARQ_CHAT = os.path.join(DATA_PATH, "chat.json")
 
-# ================= GOOGLE =================
-SCOPE = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
+# ================= GOOGLE (DESATIVADO) =================
+# SCOPE = [
+#     "https://spreadsheets.google.com/feeds",
+#     "https://www.googleapis.com/auth/drive"
+# ]
 
-CREDS = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", SCOPE)
-CLIENT = gspread.authorize(CREDS)
+# CREDS = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", SCOPE)
+# CLIENT = gspread.authorize(CREDS)
 
-PLANILHA = CLIENT.open_by_key("1HZk_CSqMU-0fotoQM0FRNcBqvgl8Oc0MFSg_OVUvm8U")
-ABA = PLANILHA.get_worksheet(0)
+# PLANILHA = CLIENT.open_by_key("SUA_CHAVE")
+# ABA = PLANILHA.get_worksheet(0)
 
 # ================= FUNÇÕES =================
 def carregar(arq):
@@ -198,7 +198,7 @@ def chat_listar():
 # ================= PLANILHA =================
 @app.route('/planilha')
 def planilha():
-    return jsonify(ABA.get_all_records())
+    return jsonify([])
 
 # ================= REGISTRAR =================
 @app.route('/registrar', methods=['POST'])
@@ -223,7 +223,7 @@ def registrar():
     for i, col in enumerate(headers):
         linha[i] = mapa.get(col.upper(), "")
 
-    ABA.append_row(linha)
+    # ABA.append_row(linha)
 
     return jsonify({"msg": "Salvo"})
 
