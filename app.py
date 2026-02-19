@@ -2,9 +2,6 @@ from flask import Flask, render_template, request, redirect, session, jsonify
 from datetime import datetime
 import json, os, unicodedata
 
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
 # ================= CONFIG =================
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'derc_pf_secret'
