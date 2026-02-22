@@ -194,8 +194,6 @@ def chat_enviar():
 def chat_listar():
     return jsonify(carregar(ARQ_CHAT))
 
-
-
 # ================= REGISTRAR =================
 @app.route('/registrar', methods=['POST'])
 def registrar():
@@ -253,48 +251,48 @@ Por meio de seu ambiente profissional será possível gerar sua anuidade e, apó
         return jsonify({"texto": "Erro interno no servidor"}), 500
 
 # ================= USUÁRIOS =================
-@app.route('/usuarios')
-def usuarios():
-    return jsonify(carregar(ARQ_USUARIOS))
-
 @app.route('/listar_usuarios')
 def listar_usuarios():
-    usuarios = carregar(ARQ_USUARIOS)
 
-    # 🔥 garante campo ativo em todos
-    for u in usuarios:
-        if 'ativo' not in u:
-            u['ativo'] = True
+    cursor.execute("SELECT user, perfil, ativo FROM usuarios")
+    dados = cursor.fetchall()
 
-    salvar(ARQ_USUARIOS, usuarios)
+    lista = []
 
-    return jsonify(usuarios)
+    for u in dados:
+        lista.append({
+            "user": u[0],
+            "perfil": u[1],
+            "ativo": u[2]
+        })
+
+    return jsonify(lista)
 
 @app.route('/alterar_senha', methods=['POST'])
 def alterar_senha():
 
     data = request.json
-    usuarios = carregar(ARQ_USUARIOS)
 
-    for u in usuarios:
-        if u['user'] == data.get('user'):
-            u['senha'] = data.get('senha')
-            break
+    cursor.execute(
+        "UPDATE usuarios SET senha=%s WHERE user=%s",
+        (data.get('senha'), data.get('user'))
+    )
 
-    salvar(ARQ_USUARIOS, usuarios)
+    conn.commit()
 
     return jsonify({"msg": "Senha atualizada"})
-
 
 @app.route('/excluir_usuario', methods=['POST'])
 def excluir_usuario():
 
     data = request.json
-    usuarios = carregar(ARQ_USUARIOS)
 
-    usuarios = [u for u in usuarios if u['user'] != data.get('user')]
+    cursor.execute(
+        "DELETE FROM usuarios WHERE user=%s",
+        (data.get('user'),)
+    )
 
-    salvar(ARQ_USUARIOS, usuarios)
+    conn.commit()
 
     return jsonify({"msg": "Excluído"})
 
@@ -302,19 +300,23 @@ def excluir_usuario():
 def toggle_usuario():
 
     data = request.json
-    usuarios = carregar(ARQ_USUARIOS)
+    user = data.get('user')
 
-    for u in usuarios:
-        if u.get('user') == data.get('user'):
+    cursor.execute("SELECT ativo FROM usuarios WHERE user=%s", (user,))
+    atual = cursor.fetchone()
 
-            # 🔥 garante campo ativo
-            atual = u.get('ativo', True)
-            u['ativo'] = not atual
+    if atual:
+        novo = not atual[0]
 
-    salvar(ARQ_USUARIOS, usuarios)
+        cursor.execute(
+            "UPDATE usuarios SET ativo=%s WHERE user=%s",
+            (novo, user)
+        )
+
+        conn.commit()
 
     return jsonify({"msg": "Atualizado"})
-
+    
 # ================= HISTÓRICO =================
 @app.route('/salvar_analise', methods=['POST'])
 def salvar_analise():
