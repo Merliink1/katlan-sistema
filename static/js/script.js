@@ -657,7 +657,7 @@ function montarAnaliseSimultanea(){
 
             <div class="acoes">
                 <button class="btn-copy" onclick="copiarTexto('saida${i}')">COPIAR</button>
-                <button class="btn-danger" onclick="limparSim(${i})">LIMPAR</button>
+                <button class="btn-danger" onclick="limparSim(${i})">LIMPAR</button
             </div>
         </div>
 

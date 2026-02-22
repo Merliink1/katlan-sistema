@@ -1,20 +1,93 @@
+# ================= IMPORTS =================
 from flask import Flask, render_template, request, redirect, session, jsonify
 from datetime import datetime
 import json, os, unicodedata
+import psycopg2
+import bcrypt
 
-# ================= CONFIG =================
+# ================= CONFIG APP =================
 app = Flask(__name__, static_folder='static')
-app.secret_key = 'derc_pf_secret'
+app.secret_key = os.getenv("SECRET_KEY", "derc_pf_secret")
 
-DATA_PATH = "database"
+# ================= BANCO =================
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not os.path.exists(DATA_PATH):
-    os.makedirs(DATA_PATH)
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL não configurado")
 
-ARQ_USUARIOS = os.path.join(DATA_PATH, "usuarios.json")
-ARQ_ACESSOS = os.path.join(DATA_PATH, "acessos.json")
-ARQ_ANALISES = os.path.join(DATA_PATH, "historico.json")
-ARQ_CHAT = os.path.join(DATA_PATH, "chat.json")
+def get_db():
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    return conn, conn.cursor()
+
+# 🔥 INICIALIZA BANCO
+def init_db():
+
+    conn, cursor = get_db()
+
+    # usuarios
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        user TEXT UNIQUE,
+        senha TEXT,
+        perfil TEXT,
+        ativo BOOLEAN DEFAULT TRUE
+    )
+    """)
+
+    # logs
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        usuario TEXT,
+        acao TEXT,
+        texto TEXT,
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # chat
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat (
+        id SERIAL PRIMARY KEY,
+        usuario TEXT,
+        mensagem TEXT,
+        hora TEXT,
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # historico
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico (
+        id SERIAL PRIMARY KEY,
+        usuario TEXT,
+        texto TEXT,
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+
+    # 🔥 CRIA ADMIN SE NÃO EXISTIR
+    cursor.execute("SELECT id FROM usuarios WHERE user=%s", ("admin",))
+    if not cursor.fetchone():
+
+        senha_hash = bcrypt.hashpw("123".encode(), bcrypt.gensalt()).decode()
+
+        cursor.execute(
+            "INSERT INTO usuarios (user, senha, perfil) VALUES (%s, %s, %s)",
+            ("admin", senha_hash, "admin")
+        )
+
+        conn.commit()
+
+    cursor.close()
+    conn.close()
+
+
+# 🔥 chama ao iniciar
+init_db()
 
 # ================= FUNÇÕES =================
 def carregar(arq):
@@ -36,17 +109,6 @@ def normalizar(txt):
                   if unicodedata.category(c) != 'Mn')
     return txt
 
-# ================= USUÁRIO PADRÃO =================
-if not os.path.exists(ARQ_USUARIOS):
-    with open(ARQ_USUARIOS, 'w') as f:
-        json.dump([
-            {
-                "user": "admin",
-                "senha": "123",
-                "perfil": "admin",
-                "ativo": True
-            }
-        ], f)
 # ================= RESOLUÇÕES =================
 RESOLUCOES = {
 
@@ -115,59 +177,116 @@ def index():
 @app.route('/login', methods=['POST'])
 def login():
 
-    user = request.form.get('user')
-    senha = request.form.get('senha')
+    conn = None
+    cursor = None
 
-    usuarios = carregar(ARQ_USUARIOS)
+    try:
+        user = (request.form.get('user') or "").strip()
+        senha = (request.form.get('senha') or "").strip()
 
-    # 👇 COLOCA AQUI
-    print("USUÁRIO:", user)
-    print("SENHA:", senha)
-    print("ARQ:", ARQ_USUARIOS)
-    print("DADOS:", usuarios)
+        # 🔒 validação básica
+        if not user or not senha:
+            return render_template('login.html', erro="Preencha usuário e senha")
 
-    for u in usuarios:
-        if u['user'] == user and u['senha'] == senha:
+        conn, cursor = get_db()
 
-            if not u.get("ativo", True):
-                return render_template('login.html', erro="Usuário desativado")
+        cursor.execute("""
+            SELECT user, senha, perfil, ativo
+            FROM usuarios
+            WHERE user=%s
+        """, (user,))
 
-            session['user'] = user
-            session['perfil'] = u.get('perfil', 'user')
-            session['login_time'] = str(datetime.now())
+        u = cursor.fetchone()
 
-            return redirect('/sistema')
+        # 🔒 usuário não encontrado
+        if not u:
+            return render_template('login.html', erro="Usuário ou senha inválidos")
 
-    return render_template('login.html', erro="Usuário ou senha inválidos")
+        # 🔒 valida senha com hash
+        if not bcrypt.checkpw(senha.encode(), u[1].encode()):
+            return render_template('login.html', erro="Usuário ou senha inválidos")
+
+        # 🔒 usuário desativado
+        if not u[3]:
+            return render_template('login.html', erro="Usuário desativado")
+
+        # 🔥 cria sessão
+        session['user'] = u[0]
+        session['perfil'] = u[2]
+        session['login_time'] = str(datetime.now())
+
+        # 🔥 LOG de login
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            u[0],
+            "login",
+            "Usuário entrou no sistema"
+        ))
+
+        conn.commit()
+
+        return redirect('/sistema')
+
+    except Exception as e:
+        print("ERRO LOGIN:", e)
+        return render_template('login.html', erro="Erro interno")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ================= SISTEMA =================
 @app.route('/sistema')
 def sistema():
 
     if 'user' not in session:
-        from flask import url_for
+        return redirect('/')
 
-        return redirect(url_for('sistema'))
-
-    return render_template('sistema.html',
-                           usuario=session['user'],
-                           cursos=RESOLUCOES.keys())
+    return render_template(
+        'sistema.html',
+        usuario=session.get('user'),
+        cursos=RESOLUCOES.keys()
+    )
 
 # ================= LOGOUT =================
 @app.route('/logout')
 def logout():
 
-    acessos = carregar(ARQ_ACESSOS)
+    conn = None
+    cursor = None
 
-    acessos.append({
-        "usuario": session.get('user'),
-        "entrada": session.get('login_time'),
-        "saida": str(datetime.now())
-    })
+    try:
+        if 'user' in session:
 
-    salvar(ARQ_ACESSOS, acessos)
+            conn, cursor = get_db()
 
+            cursor.execute("""
+                INSERT INTO logs (usuario, acao, texto)
+                VALUES (%s, %s, %s)
+            """, (
+                session.get('user'),
+                "logout",
+                "Usuário saiu do sistema"
+            ))
+
+            conn.commit()
+
+    except Exception as e:
+        print("ERRO LOGOUT:", e)
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    # 🔥 limpa sessão SEMPRE
     session.clear()
+
     return redirect('/')
 
 # ================= CHAT =================
@@ -175,74 +294,209 @@ def logout():
 def chat_enviar():
 
     if 'user' not in session:
-        return jsonify({"erro": "não logado"})
+        return jsonify({"erro": "não logado"}), 401
 
-    data = request.json
-    chat = carregar(ARQ_CHAT)
+    conn = None
+    cursor = None
 
-    chat.append({
-        "usuario": session.get('user'),
-        "mensagem": data.get("mensagem"),
-        "hora": datetime.now().strftime("%H:%M")
-    })
+    try:
+        data = request.json or {}
 
-    salvar(ARQ_CHAT, chat)
+        mensagem = (data.get("mensagem") or "").strip()
 
-    return jsonify({"ok": True})
+        # 🔒 valida mensagem
+        if not mensagem:
+            return jsonify({"erro": "mensagem vazia"}), 400
+
+        if len(mensagem) > 1000:
+            return jsonify({"erro": "mensagem muito longa"}), 400
+
+        conn, cursor = get_db()
+
+        hora = datetime.now().strftime("%H:%M")
+
+        # 🔥 salva chat
+        cursor.execute("""
+            INSERT INTO chat (usuario, mensagem, hora)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            mensagem,
+            hora
+        ))
+
+        # 🔥 salva log
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "chat",
+            mensagem[:200]  # limita log
+        ))
+
+        conn.commit()
+
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        print("ERRO CHAT ENVIAR:", e)
+        return jsonify({"erro": "falha no envio"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/chat_listar')
 def chat_listar():
-    return jsonify(carregar(ARQ_CHAT))
+
+    # 🔒 valida login
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            SELECT usuario, mensagem, hora
+            FROM chat
+            ORDER BY id DESC
+            LIMIT 100
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for d in dados:
+            lista.append({
+                "usuario": d[0] or "Desconhecido",
+                "mensagem": d[1] or "",
+                "hora": d[2] or ""
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO LISTAR CHAT:", e)
+        return jsonify({"erro": "falha ao carregar chat"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ================= REGISTRAR =================
 @app.route('/registrar', methods=['POST'])
 def registrar():
 
-    data = request.json
-    historico = carregar(ARQ_ANALISES)
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    historico.append({
-        "protocolo": data.get("protocolo"),
-        "nome": data.get("nome"),
-        "estado": data.get("estado"),
-        "tipo": data.get("tipo"),
-        "status": data.get("status"),
-        "data": datetime.now().strftime("%d/%m/%Y")
-    })
+    conn = None
+    cursor = None
 
-    salvar(ARQ_ANALISES, historico)
+    try:
+        data = request.json or {}
 
-    return jsonify({"msg": "Salvo"})
+        protocolo = data.get('protocolo')
+        status = data.get('status')
+
+        if not protocolo or not status:
+            return jsonify({"msg": "Dados incompletos"}), 400
+
+        conn, cursor = get_db()
+
+        texto = f"PROTOCOLO: {protocolo} | STATUS: {status}"
+
+        # 🔥 salva no histórico
+        cursor.execute("""
+            INSERT INTO historico (usuario, texto)
+            VALUES (%s, %s)
+        """, (
+            session.get('user'),
+            texto
+        ))
+
+        # 🔥 salva log
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "registro",
+            texto
+        ))
+
+        conn.commit()
+
+        return jsonify({"msg": "Salvo"})
+
+    except Exception as e:
+        print("ERRO REGISTRAR:", e)
+        return jsonify({"msg": "Erro"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ================= DEFERIMENTO =================
 @app.route('/deferimento', methods=['POST'])
 def deferimento():
 
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
     try:
         data = request.json or {}
 
-        curso = data.get("curso") or ""
+        curso = (data.get("curso") or "").strip()
         tipo = data.get("tipo") or ""
 
-        curso = curso.strip()
+        if not curso:
+            return jsonify({"texto": "Curso não informado"}), 400
 
         resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
 
+        # 🔥 TEXTO
         if tipo == "definitivo":
-
             texto = f"""REGISTRO DEFERIDO.
 Cadastro finalizado e ATIVO. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
 Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua carteira profissional. Para mais informações sobre sua anuidade, entre em contato pelo canal (98) 98279-0023.
 """
-
         else:
-
             texto = f"""REGISTRO DEFERIDO.
 Cadastro finalizado e ATIVO. Por se tratar de Registro Provisório, o mesmo terá validade de 01 ano passando a constar da data de efetivação. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
-Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua certidão de quitação de pessoa física e ter acesso a sua carteira profissional digital. Para mais informações sobre sua anuidade, entre em contato pelo canal  (98) 98279-0023
+Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua certidão de quitação de pessoa física e ter acesso a sua carteira profissional digital. Para mais informações sobre sua anuidade, entre em contato pelo canal (98) 98279-0023
 """
+
+        # 🔥 abre conexão só uma vez
+        conn, cursor = get_db()
+
+        # 🔥 log
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "deferimento",
+            f"{curso} | {tipo}"
+        ))
+
+        conn.commit()
 
         return jsonify({"texto": texto})
 
@@ -250,62 +504,194 @@ Por meio de seu ambiente profissional será possível gerar sua anuidade e, apó
         print("ERRO NO DEFERIMENTO:", e)
         return jsonify({"texto": "Erro interno no servidor"}), 500
 
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 # ================= USUÁRIOS =================
 @app.route('/listar_usuarios')
 def listar_usuarios():
 
-    cursor.execute("SELECT user, perfil, ativo FROM usuarios")
-    dados = cursor.fetchall()
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    lista = []
+    conn = None
+    cursor = None
 
-    for u in dados:
-        lista.append({
-            "user": u[0],
-            "perfil": u[1],
-            "ativo": u[2]
-        })
+    try:
+        conn, cursor = get_db()
 
-    return jsonify(lista)
+        cursor.execute("""
+            SELECT user, perfil, ativo
+            FROM usuarios
+            ORDER BY user
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for u in dados:
+            lista.append({
+                "user": u[0],
+                "perfil": u[1],
+                "ativo": u[2]
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO LISTAR USUARIOS:", e)
+        return jsonify({"erro": "falha ao listar"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/alterar_senha', methods=['POST'])
 def alterar_senha():
 
-    data = request.json
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    cursor.execute(
-        "UPDATE usuarios SET senha=%s WHERE user=%s",
-        (data.get('senha'), data.get('user'))
-    )
+    conn = None
+    cursor = None
 
-    conn.commit()
+    try:
+        data = request.json
 
-    return jsonify({"msg": "Senha atualizada"})
+        user = data.get('user')
+        nova = data.get('senha')
+
+        if not user or not nova:
+            return jsonify({"msg": "Dados inválidos"}), 400
+
+        conn, cursor = get_db()
+
+        senha_hash = bcrypt.hashpw(nova.encode(), bcrypt.gensalt()).decode()
+
+        cursor.execute("""
+            UPDATE usuarios 
+            SET senha=%s 
+            WHERE user=%s
+        """, (senha_hash, user))
+
+        conn.commit()
+
+        return jsonify({"msg": "Senha atualizada"})
+
+    except Exception as e:
+        print("ERRO alterar_senha:", e)
+        return jsonify({"msg": "Erro interno"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 
 @app.route('/excluir_usuario', methods=['POST'])
 def excluir_usuario():
 
-    data = request.json
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    cursor.execute(
-        "DELETE FROM usuarios WHERE user=%s",
-        (data.get('user'),)
-    )
+    # 🔒 só admin pode excluir
+    if session.get('perfil') != 'admin':
+        return jsonify({"erro": "sem permissão"}), 403
 
-    conn.commit()
+    conn = None
+    cursor = None
 
-    return jsonify({"msg": "Excluído"})
+    try:
+        data = request.json
+        user = data.get('user')
+
+        if not user:
+            return jsonify({"msg": "Usuário inválido"}), 400
+
+        # 🔒 não pode excluir a si mesmo
+        if user == session.get('user'):
+            return jsonify({"msg": "Você não pode excluir seu próprio usuário"}), 400
+
+        # 🔒 não pode excluir admin
+        if user == 'admin':
+            return jsonify({"msg": "Não é permitido excluir o admin"}), 400
+
+        conn, cursor = get_db()
+
+        cursor.execute("DELETE FROM usuarios WHERE user=%s", (user,))
+        conn.commit()
+
+        # 🔥 LOG
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "excluir_usuario",
+            f"Usuário excluído: {user}"
+        ))
+
+        conn.commit()
+
+        return jsonify({"msg": "Excluído com sucesso"})
+
+    except Exception as e:
+        print("ERRO excluir_usuario:", e)
+        return jsonify({"msg": "Erro interno"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/toggle_usuario', methods=['POST'])
 def toggle_usuario():
 
-    data = request.json
-    user = data.get('user')
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    cursor.execute("SELECT ativo FROM usuarios WHERE user=%s", (user,))
-    atual = cursor.fetchone()
+    # 🔒 só admin pode alterar status
+    if session.get('perfil') != 'admin':
+        return jsonify({"erro": "sem permissão"}), 403
 
-    if atual:
+    conn = None
+    cursor = None
+
+    try:
+        data = request.json
+        user = data.get('user')
+
+        if not user:
+            return jsonify({"msg": "Usuário inválido"}), 400
+
+        # 🔒 não pode desativar a si mesma
+        if user == session.get('user'):
+            return jsonify({"msg": "Você não pode alterar seu próprio status"}), 400
+
+        # 🔒 não pode desativar admin
+        if user == 'admin':
+            return jsonify({"msg": "Não é permitido alterar o admin"}), 400
+
+        conn, cursor = get_db()
+
+        cursor.execute(
+            "SELECT ativo FROM usuarios WHERE user=%s",
+            (user,)
+        )
+
+        atual = cursor.fetchone()
+
+        if not atual:
+            return jsonify({"msg": "Usuário não encontrado"}), 404
+
         novo = not atual[0]
 
         cursor.execute(
@@ -315,79 +701,195 @@ def toggle_usuario():
 
         conn.commit()
 
-    return jsonify({"msg": "Atualizado"})
-    
+        # 🔥 LOG
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "toggle_usuario",
+            f"{'Ativado' if novo else 'Desativado'} usuário: {user}"
+        ))
+
+        conn.commit()
+
+        return jsonify({"msg": "Atualizado com sucesso"})
+
+    except Exception as e:
+        print("ERRO toggle_usuario:", e)
+        return jsonify({"msg": "Erro interno"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 # ================= HISTÓRICO =================
 @app.route('/salvar_analise', methods=['POST'])
 def salvar_analise():
 
-    data = request.json
-    historico = carregar(ARQ_ANALISES)
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
 
-    historico.append({
-        "usuario": session.get('user'),
-        "data": str(datetime.now()),
-        "texto": data.get("texto")
-    })
+    conn = None
+    cursor = None
 
-    salvar(ARQ_ANALISES, historico)
+    try:
+        data = request.json or {}
 
-    return jsonify({"msg": "ok"})
+        texto = (data.get("texto") or "").strip()
+
+        # 🔒 valida texto
+        if not texto:
+            return jsonify({"erro": "Texto vazio"}), 400
+
+        # 🔒 limite (evita travar banco)
+        if len(texto) > 5000:
+            return jsonify({"erro": "Texto muito grande"}), 400
+
+        conn, cursor = get_db()
+
+        # 🔥 salva histórico
+        cursor.execute("""
+            INSERT INTO historico (usuario, texto)
+            VALUES (%s, %s)
+        """, (
+            session.get('user'),
+            texto
+        ))
+
+        # 🔥 salva log (resumido)
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "analise",
+            texto[:200]  # salva só começo pra não poluir log
+        ))
+
+        conn.commit()
+
+        return jsonify({"msg": "ok"})
+
+    except Exception as e:
+        print("ERRO HISTORICO:", e)
+        return jsonify({"erro": "falha"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/historico')
 def historico():
-    return jsonify(carregar(ARQ_ANALISES))
+
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            SELECT usuario, texto, data
+            FROM historico
+            ORDER BY data DESC
+            LIMIT 200
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for d in dados:
+            lista.append({
+                "usuario": d[0],
+                "texto": d[1],
+                "data": d[2].strftime("%d/%m/%Y %H:%M") if d[2] else ""
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO LISTAR HISTORICO:", e)
+        return jsonify({"erro": "falha ao carregar"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ================= CADASTRAR USUARIO =================
 @app.route('/cadastrar_usuario', methods=['POST'])
 def cadastrar_usuario():
+
+    if 'user' not in session:
+        return jsonify({"msg": "não autorizado"}), 401
+
+    if session.get('perfil') != 'admin':
+        return jsonify({"msg": "acesso negado"}), 403
+
+    conn = None
+    cursor = None
+
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
 
-        if not data:
-            return jsonify({"msg": "Dados inválidos"}), 400
-
-        user = data.get('user')
-        senha = data.get('senha')
-        perfil = data.get('perfil')
+        user = (data.get('user') or "").strip()
+        senha = (data.get('senha') or "").strip()
+        perfil = (data.get('perfil') or "usuario").strip()
 
         if not user or not senha:
             return jsonify({"msg": "Preencha usuário e senha"}), 400
 
-        usuarios = carregar(ARQ_USUARIOS)
+        conn, cursor = get_db()
 
-        if usuarios is None:
-            usuarios = []
+        cursor.execute("SELECT id FROM usuarios WHERE user=%s", (user,))
+        if cursor.fetchone():
+            return jsonify({"msg": "Usuário já existe"}), 400
 
-        # evitar duplicado
-        for u in usuarios:
-            if u['user'] == user:
-                return jsonify({"msg": "Usuário já existe"}), 400
+        # 🔐 HASH
+        senha_hash = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode()
 
-        usuarios.append({
-            "user": user,
-            "senha": senha,
-            "perfil": perfil,
-            "ativo": True
-        })
+        cursor.execute(
+            "INSERT INTO usuarios (user, senha, perfil) VALUES (%s, %s, %s)",
+            (user, senha_hash, perfil)
+        )
 
-        salvar(ARQ_USUARIOS, usuarios)
+        conn.commit()
 
         return jsonify({"msg": "Cadastrado com sucesso"})
 
     except Exception as e:
         print("ERRO cadastrar_usuario:", e)
-        return jsonify({"msg": str(e)}), 500
+        return jsonify({"msg": "Erro interno"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ================= INCLUSÃO DE TITULO =================
 @app.route('/deferimento_titulo', methods=['POST'])
 def deferimento_titulo():
 
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
     try:
         data = request.json or {}
 
-        curso = data.get("curso") or ""
-        curso = curso.strip()
+        curso = (data.get("curso") or "").strip()
 
         resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
 
@@ -406,15 +908,171 @@ Em casos de 1ª ou 2ª via da carteira física, a atualização será possível 
         if any(x in curso_check for x in ["AGRIMENSURA", "GEODESIA", "CARTOGRAFIA", "GEOPROCESSAMENTO"]):
             texto += '\nComunicamos que deverá solicitar mediante o protocolo a "Revisão de atribuições em Georreferenciamento" caso deseje emitir TRTs para atividades de georreferenciamento.'
 
+        # 🔥 SALVA HISTÓRICO
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            INSERT INTO historico (usuario, texto)
+            VALUES (%s, %s)
+        """, (
+            session.get('user'),
+            f"INCLUSÃO DE TÍTULO - {curso}"
+        ))
+
+        # 🔥 LOG
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            "deferimento_titulo",
+            f"Curso: {curso}"
+        ))
+
+        conn.commit()
+
         return jsonify({"texto": texto})
 
     except Exception as e:
         print("ERRO NO DEFERIMENTO TÍTULO:", e)
         return jsonify({"texto": "Erro interno no servidor"}), 500
 
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+        
+@app.route('/log', methods=['POST'])
+def log():
+
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
+    try:
+        data = request.json or {}
+
+        acao = data.get('acao', 'acao_nao_informada')
+        texto = data.get('texto', '')
+
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            INSERT INTO logs (usuario, acao, texto)
+            VALUES (%s, %s, %s)
+        """, (
+            session.get('user'),
+            acao,
+            texto
+        ))
+
+        conn.commit()
+
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        print("ERRO LOG:", e)
+        return jsonify({"erro": "falha ao salvar log"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/listar_logs')
+def listar_logs():
+
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            SELECT usuario, acao, texto, data
+            FROM logs
+            ORDER BY data DESC
+            LIMIT 200
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for d in dados:
+            lista.append({
+                "usuario": d[0],
+                "acao": d[1],
+                "texto": d[2],
+                "data": d[3].strftime("%d/%m/%Y %H:%M") if d[3] else ""
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO LISTAR LOGS:", e)
+        return jsonify({"erro": "falha ao carregar logs"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/relatorio')
+def relatorio():
+
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    # 🔒 apenas admin
+    if session.get('perfil') != 'admin':
+        return jsonify({"erro": "sem permissão"}), 403
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            SELECT usuario, COUNT(*) AS total
+            FROM logs
+            GROUP BY usuario
+            ORDER BY total DESC
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for d in dados:
+            lista.append({
+                "usuario": d[0] or "Desconhecido",
+                "acoes": int(d[1])
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO RELATORIO:", e)
+        return jsonify({"erro": "falha ao gerar relatório"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 # ================= EXEC =================
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
-
+    print("Rodando local...")
+    app.run(debug=True)
 
