@@ -681,3 +681,22 @@ body.dark .logo-menu{
     fill:none;
     stroke-width:1.8;
 }
+
+/* ================= GRID INTERRUPÇÃO ================= */
+
+.grid-interrupcao{
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 🔥 duas colunas iguais */
+    gap: 20px;
+    width: 100%;
+}
+
+/* força os cards a respeitar o grid */
+.grid-interrupcao .cardAnalise{
+    width: 100%;
+}
+
+.cardAnalise h4{
+    margin-bottom: 14px;
+    font-weight: 600;
+}

@@ -220,33 +220,37 @@ def registrar():
 @app.route('/deferimento', methods=['POST'])
 def deferimento():
 
-    data = request.json
+    try:
+        data = request.json or {}
 
-    curso = normalizar(data.get("curso"))
-    tipo = data.get("tipo")
+        curso = data.get("curso") or ""
+        tipo = data.get("tipo") or ""
 
-    resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
+        curso = curso.strip()
 
-    curso_formatado = curso.upper()
-    resolucao_formatada = resolucao.upper()
+        resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
 
-    if tipo == "definitivo":
+        if tipo == "definitivo":
 
-        texto = f"""REGISTRO DEFERIDO.
-CADASTRO FINALIZADO E ATIVO. VOCÊ PODERÁ ACESSAR O SEU AMBIENTE PROFISSIONAL ATRAVÉS DA SENHA ENCAMINHADA POR E-MAIL. PARA VERIFICAR SUAS ATRIBUIÇÕES TÉCNICAS COM HABILITAÇÃO EM {curso}, CONSULTE A {resolucao}, ONDE CONSTAM AS RESPONSABILIDADES E DIRETRIZES ESPECÍFICAS PARA O EXERCÍCIO DE SUA PROFISSÃO. 
+            texto = f"""REGISTRO DEFERIDO.
+Cadastro finalizado e ATIVO. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
-POR MEIO DE SEU AMBIENTE PROFISSIONAL SERÁ POSSÍVEL GERAR SUA ANUIDADE E, APÓS A COMPENSAÇÃO DO PAGAMENTO NO SISTEMA, PODERÁ EMITIR SUA CARTEIRA PROFISSIONAL. PARA MAIS INFORMAÇÕES SOBRE SUA ANUIDADE, ENTRE EM CONTATO PELO CANAL (98) 98279-0023.
+Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua carteira profissional. Para mais informações sobre sua anuidade, entre em contato pelo canal (98) 98279-0023.
 """
 
-    else:
+        else:
 
-        texto = f"""REGISTRO DEFERIDO.
-CADASTRO FINALIZADO E ATIVO. POR SE TRATAR DE REGISTRO PROVISÓRIO, O MESMO TERÁ VALIDADE DE 01 ANO PASSANDO A CONSTAR DA DATA DE EFETIVAÇÃO. VOCÊ PODERÁ ACESSAR O SEU AMBIENTE PROFISSIONAL ATRAVÉS DA SENHA ENCAMINHADA POR E-MAIL. PARA VERIFICAR SUAS ATRIBUIÇÕES TÉCNICAS COM HABILITAÇÃO EM {curso}, CONSULTE A {resolucao}, ONDE CONSTAM AS RESPONSABILIDADES E DIRETRIZES ESPECÍFICAS PARA O EXERCÍCIO DE SUA PROFISSÃO. 
+            texto = f"""REGISTRO DEFERIDO.
+Cadastro finalizado e ATIVO. Por se tratar de Registro Provisório, o mesmo terá validade de 01 ano passando a constar da data de efetivação. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
-POR MEIO DE SEU AMBIENTE PROFISSIONAL SERÁ POSSÍVEL GERAR SUA ANUIDADE E, APÓS A COMPENSAÇÃO DO PAGAMENTO NO SISTEMA, PODERÁ EMITIR SUA CERTIDÃO DE QUITAÇÃO DE PESSOA FÍSICA E TER ACESSO A SUA CARTEIRA PROFISSIONAL DIGITAL. PARA MAIS INFORMAÇÕES SOBRE SUA ANUIDADE, ENTRE EM CONTATO PELO CANAL (98) 98279-0023.
+Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua certidão de quitação de pessoa física e ter acesso a sua carteira profissional digital. Para mais informações sobre sua anuidade, entre em contato pelo canal  (98) 98279-0023
 """
 
-    return jsonify({"texto": texto})
+        return jsonify({"texto": texto})
+
+    except Exception as e:
+        print("ERRO NO DEFERIMENTO:", e)
+        return jsonify({"texto": "Erro interno no servidor"}), 500
 
 # ================= USUÁRIOS =================
 @app.route('/usuarios')
@@ -373,7 +377,42 @@ def cadastrar_usuario():
         print("ERRO cadastrar_usuario:", e)
         return jsonify({"msg": str(e)}), 500
 
+# ================= INCLUSÃO DE TITULO =================
+@app.route('/deferimento_titulo', methods=['POST'])
+def deferimento_titulo():
+
+    try:
+        data = request.json or {}
+
+        curso = data.get("curso") or ""
+        curso = curso.strip()
+
+        resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
+
+        texto = f"""INCLUSÃO DE TÍTULO DEFERIDA.
+Informamos que o título de Técnico em {curso} encontra-se cadastrado em seu registro profissional. Para verificar suas atribuições técnicas, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
+
+Para que o título incluso conste na carteira digital (imediatamente) ou na 1ª ou 2ª via da carteira física, será necessário realizar a inclusão do título.
+Na guia FERRAMENTAS, selecione a opção "ALTERAR TÍTULOS IMPRESSOS NA CARTEIRA" e, posteriormente, escolha os títulos que deseja incluir e clique em SALVAR.
+
+Em casos de 1ª ou 2ª via da carteira física, a atualização será possível caso o documento ainda não tenha sido emitido ou enviado.
+"""
+
+        # 🔥 REGRA DOS CURSOS
+        curso_check = normalizar(curso)
+
+        if any(x in curso_check for x in ["AGRIMENSURA", "GEODESIA", "CARTOGRAFIA", "GEOPROCESSAMENTO"]):
+            texto += '\nComunicamos que deverá solicitar mediante o protocolo a "Revisão de atribuições em Georreferenciamento" caso deseje emitir TRTs para atividades de georreferenciamento.'
+
+        return jsonify({"texto": texto})
+
+    except Exception as e:
+        print("ERRO NO DEFERIMENTO TÍTULO:", e)
+        return jsonify({"texto": "Erro interno no servidor"}), 500
+
 # ================= EXEC =================
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
+

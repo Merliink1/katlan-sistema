@@ -76,17 +76,23 @@
 </button>
 
 <div class="submenu">
-    <button onclick="abrir('deferimentoUnico', this)">Único</button>
-    <button onclick="abrir('deferimentoSimultaneo', this)">Simultâneo</button>
+    <button onclick="abrir('deferimentoUnico', this)">Registro</button>
+    <button onclick="abrir('deferimentoSimultaneo', this)">Inclusão de Título</button>
 </div>
 </div>
 
-<button onclick="abrir('registrados', this)">
+<button onclick="abrir('interrupcaoRegistro', this)">
     <svg width="16" height="16" viewBox="0 0 24 24">
-        <path d="M3 3h18v18H3z" fill="none" stroke="currentColor" stroke-width="2"/>
-        <path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="2"/>
+        <path d="M3 12h18" stroke="currentColor" stroke-width="2"/>
     </svg>
-    Registrados
+    Interrupção de Registro
+</button>
+
+<button onclick="abrir('reativacaoRegistro', this)">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+        <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    Reativação de Registro
 </button>
 
 <button onclick="abrir('mensagens', this)">
@@ -121,7 +127,7 @@
 <h2>Bem-vindo, {{usuario}}</h2>
 
 <p class="frase">
-"Organização gera resultados. Consistência gera excelência."
+ Organização gera resultados. Consistência gera excelência.
 </p>
 </div>
 
@@ -146,7 +152,7 @@
 <!-- ================= DEFERIMENTO UNICO ================= -->
 <div id="deferimentoUnico" class="card hidden">
 
-<h3>Deferimento</h3>
+<h3>Deferimento de Registro</h3>
 
 <input list="listaCursos" id="curso" placeholder="Curso" oninput="gerarDefer()">
 
@@ -156,7 +162,7 @@
 {% endfor %}
 </datalist>
 
-<select id="tipo">
+<select id="tipo" onchange="gerarDefer()">
 <option value="definitivo">Definitivo</option>
 <option value="provisorio">Provisório</option>
 </select>
@@ -168,10 +174,17 @@
 
 </div>
 
-<!-- ================= DEFERIMENTO SIMULTANEO ================= -->
+<!-- ================= DEFERIMENTO INCLUSÃO DE TITULO ================= -->
 <div id="deferimentoSimultaneo" class="card hidden">
-<h3>Deferimento Simultâneo</h3>
-<div id="gridDefer"></div>
+
+<h3>Deferimento de Inclusão de Título</h3>
+
+<input list="listaCursos" id="cursoTitulo" placeholder="Curso" oninput="gerarDeferTitulo()">
+
+<textarea id="saidaDeferTitulo"></textarea>
+
+<button onclick="copiarTexto('saidaDeferTitulo')">Copiar</button>
+<button class="btn-danger" onclick="limparCampo('saidaDeferTitulo')">Limpar</button>
 
 </div>
 
@@ -235,6 +248,73 @@
 
 </div>
 
+<!-- ================= INTERRUPÇÃO ================= -->
+<div id="interrupcaoRegistro" class="card hidden">
+
+    <h3>Interrupção de Registro</h3>
+
+    <div class="grid-interrupcao">
+
+        <!-- ================= INDEFERIMENTO ================= -->
+        <div class="cardAnalise">
+
+            <h4>Indeferimento de Interrupção</h4>
+
+            <select id="selectIndeferimento"
+                    onchange="gerarInterrupcao('indeferimento')"
+                    onclick="forcarGeracaoInterrupcao('indeferimento')">
+                <option value="">Selecione o motivo</option>
+            </select>
+
+            <textarea id="saidaIndeferimento"></textarea>
+
+            <button onclick="copiarTexto('saidaIndeferimento')">Copiar</button>
+            <button class="btn-danger" onclick="limparCampo('saidaIndeferimento')">Limpar</button>
+
+        </div>
+
+        <!-- ================= DEFERIMENTO ================= -->
+        <div class="cardAnalise">
+
+            <h4>Deferimento de Interrupção</h4>
+
+            <select id="selectDeferimentoInt"
+                    onchange="gerarInterrupcao('deferimento')">
+                <option value="">Selecione o tipo</option>
+            </select>
+
+            <textarea id="saidaDeferimentoInt"></textarea>
+
+            <button onclick="copiarTexto('saidaDeferimentoInt')">Copiar</button>
+            <button class="btn-danger" onclick="limparCampo('saidaDeferimentoInt')">Limpar</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= REATIVAÇÃO ================= -->
+
+<div id="reativacaoRegistro" class="card hidden">
+
+<h3>Reativação de Registro</h3>
+
+<input type="text" id="nomeReativacao" placeholder="Nome do profissional">
+
+<select id="tipoReativacao" onchange="gerarTextoReativacao()">
+    <option value="">Selecione uma opção</option>
+    <option value="comum">Reativação Comum</option>
+    <option value="atualizacao">Reativação de Inativos</option>
+    <option value="definitivo">Alteração para Definitivo</option>
+</select>
+
+<textarea id="saidaReativacao"></textarea>
+
+<button onclick="copiarTexto('saidaReativacao')">Copiar</button>
+<button class="btn-danger" onclick="limparReativacao()">Limpar</button>
+
+</div>
 
 <!-- ================= MODAL DATA ================= -->
 <div id="modalData" class="modal hidden" onclick="fecharModalFora(event)">

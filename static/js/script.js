@@ -24,10 +24,14 @@ function abrir(id, btn){
         montarAnaliseSimultanea();
     }
 
-    // 🔥 ADICIONE ISSO AQUI
     if(id === 'admin'){
         carregarUsuarios();
     }
+
+    if(id === 'interrupcaoRegistro'){
+    carregarSelectIndeferimento();
+    carregarSelectDeferimento();
+}
 }
 
 // ================= LOGOUT =================
@@ -43,12 +47,6 @@ function toggleDark(){
         localStorage.setItem("dark","1");
     }else{
         localStorage.removeItem("dark");
-    }
-}
-
-window.onload = function(){
-    if(localStorage.getItem("dark")){
-        document.body.classList.add("dark");
     }
 }
 
@@ -659,7 +657,7 @@ function montarAnaliseSimultanea(){
 
             <div class="acoes">
                 <button class="btn-copy" onclick="copiarTexto('saida${i}')">COPIAR</button>
-                <button class="btn-clear" onclick="limparSim(${i})">LIMPAR</button>
+                <button class="btn-danger" onclick="limparSim(${i})">LIMPAR</button>
             </div>
         </div>
 
@@ -822,11 +820,19 @@ function limparTudoSim(){
 
 // ================= INIT =================
 window.onload = function(){
+
+    if(localStorage.getItem("dark")){
+        document.body.classList.add("dark");
+    }
+
     atualizarHora();
     montarAnaliseUnica();
     montarAnaliseSimultanea();
     setInterval(carregarChat,2000);
     carregarChat();
+
+    carregarSelectIndeferimento();
+    carregarSelectDeferimento();
 }
 
 // ================= MODAL DATA =================
@@ -910,11 +916,14 @@ console.log("JS carregado");
 
 function gerarDefer(){
 
-    let curso = document.getElementById("curso")?.value;
+    let curso = document.getElementById("curso")?.value || "";
     let tipo = document.getElementById("tipo")?.value;
     let area = document.getElementById("saidaDefer");
 
-    if(!curso || !tipo) return;
+    if(!curso || !tipo){
+        if(area) area.value = "";
+        return;
+    }
 
     fetch("/deferimento", {
         method: "POST",
@@ -928,7 +937,24 @@ function gerarDefer(){
     })
     .then(r => r.json())
     .then(res => {
-        area.value = res.texto || "Erro ao gerar texto.";
+
+        let texto = res.texto || "";
+
+        // 🔥 REGRA ESPECIAL DE CURSOS
+        let cursoUpper = curso.toUpperCase();
+
+        if(
+            cursoUpper.includes("AGRIMENSURA") ||
+            cursoUpper.includes("GEODÉSIA") ||
+            cursoUpper.includes("GEODESIA") ||
+            cursoUpper.includes("CARTOGRAFIA") ||
+            cursoUpper.includes("GEOPROCESSAMENTO")
+        ){
+           texto += "\nComunicamos que deverá solicitar mediante o protocolo a \"Revisão de atribuições em Georreferenciamento\" caso deseje emitir TRTs para atividades de georreferenciamento.";
+        }
+
+        area.value = texto;
+
     })
     .catch(() => {
         area.value = "Erro ao conectar com o servidor.";
@@ -1087,4 +1113,302 @@ function cadastrarUsuario(){
         alert("Erro: " + err.message);
         console.error(err);
     });
+}
+
+function limparCampo(id){
+    let campo = document.getElementById(id);
+    if(campo){
+        campo.value = "";
+    }
+}
+
+function gerarDeferTitulo(){
+
+    let curso = document.getElementById("cursoTitulo")?.value;
+    let area = document.getElementById("saidaDeferTitulo");
+
+    if(!curso){
+        if(area) area.value = "";
+        return;
+    }
+
+    fetch("/deferimento_titulo", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            curso: curso
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if(area){
+            area.value = res.texto || "Erro ao gerar texto.";
+        }
+    })
+    .catch(() => {
+        if(area){
+            area.value = "Erro ao conectar com o servidor.";
+        }
+    });
+}
+
+function gerarInterrupcao(tipo){
+
+    let selectId = tipo === "indeferimento" ? "selectIndeferimento" : "selectDeferimentoInt";
+    let saidaId = tipo === "indeferimento" ? "saidaIndeferimento" : "saidaDeferimentoInt";
+
+    let select = document.getElementById(selectId);
+    let area = document.getElementById(saidaId);
+
+    if(!select || !area) return;
+
+    let chave = select.value;
+    let item = TEXTOS_INTERRUPCAO[tipo][chave];
+
+    if(!item){
+        area.value = "";
+        return;
+    }
+
+    // 🔥 TRATAMENTO DE NÚMERO (CBO)
+    if(item.precisaNumero){
+
+        abrirModalNumero((numero)=>{
+    let texto = item.texto.replace("{numero}", numero);
+    area.value = texto;
+    select.selectedIndex = 0; // 🔥 reseta
+});
+
+    } else {
+        area.value = item.texto;
+        select.selectedIndex = 0; // 🔥 reseta
+    }
+}
+
+const TEXTOS_INTERRUPCAO = {
+
+    indeferimento: {
+
+        incompleta: {
+            titulo: "Solicitação incompleta",
+            texto: `INTERRUPÇÃO INDEFERIDA.
+O requerimento de solicitação não atende aos normativos da Resolução 141/2021 do CFT conforme Capítulo III onde estabelece os procedimentos e requisitos quanto à Interrupção de registro profissional. Solicite novamente a interrupção através de protocolo, o mesmo deve apresentar uma declaração de não ocupação de cargo ou atividade na área de sua formação técnica profissional, constando nome completo e CPF, assinada pelo requerente e datada e A CARTEIRA DE TRABALHO DIGITAL CONSTANDO AS INFORMAÇÕES DOS TRABALHOS E IDENTIFICAÇÃO DO TITULAR DA CTPS, como documentação comprobatória. Se a solicitação estiver relacionada a motivo de saúde, o requerente deverá apresentar documento que comprove a carta de concessão ou decisão de benefício do INSS.
+
+Caso necessite de esclarecimentos adicionais por favor entrar em contato com 98 98279-0023.
+
+Ressaltamos que, conforme o Art. 35 da Resolução CFT nº 045/2018, é vedado o exercício de atividades fiscalizadas pelo sistema CFT/CRTs por profissionais técnicos industriais sem o devido registro ativo, o que destaca a importância da regularização para o desempenho das funções.`
+        },
+
+        trt: {
+            titulo: "Com TRT ou Responsável Técnico",
+            texto: `INTERRUPÇÃO INDEFERIDA.
+Prezado Profissional, analisamos em nosso sistema e conforme a resolução nº 141/2021, Art.13º, onde consta que a interrupção do registro é facultada ao profissional que, temporariamente, não pretende exercer a profissão e que atenda certas condições. Portanto solicitamos que seja dada baixa em suas TRTs ativas e posteriormente seja solicitado baixa em sua Responsabilidade Técnica ativa.
+
+Ademais informamos que após os procedimentos informados, solicite novamente a interrupção através de protocolo, o mesmo deve apresentar uma declaração de não ocupação de cargo ou atividade na área de sua formação técnica profissional, constando nome completo e CPF, assinada pelo requerente e datada e A CARTEIRA DE TRABALHO DIGITAL CONSTANDO AS INFORMAÇÕES DOS TRABALHOS E IDENTIFICAÇÃO DO TITULAR DA CTPS, como documentação comprobatória. Se a solicitação estiver relacionada a motivo de saúde, o requerente deverá apresentar documento que comprove a carta de concessão ou decisão de benefício do INSS.
+
+Caso necessite de esclarecimentos adicionais por favor entrar em contato com 98 98279-0023.
+
+Ressaltamos que, conforme o Art. 35 da Resolução CFT nº 045/2018, é vedado o exercício de atividades fiscalizadas pelo sistema CFT/CRTs por profissionais técnicos industriais sem o devido registro ativo, o que destaca a importância da regularização para o desempenho das funções.`
+        },
+
+        cbo: {
+            titulo: "Exercendo atividades técnicas",
+            texto: `INTERRUPÇÃO INDEFERIDA.
+O requerimento apresentado não atende aos requisitos estabelecidos na Resolução CFT nº 141/2021, especificamente no Capítulo III, que trata dos procedimentos e condições para a interrupção do registro profissional. Após análise do CBO {numero}, constatou-se que as atividades descritas estão diretamente relacionadas às prerrogativas e atribuições de técnicos industriais.
+
+Ressaltamos que, conforme o Art. 35 da Resolução CFT nº 045/2018, é vedado o exercício de atividades fiscalizadas pelo sistema CFT/CRTs por profissionais técnicos industriais sem o devido registro ativo, o que destaca a importância da regularização para o desempenho das funções.
+
+Posteriormente, caso não exerça atividades técnicas, poderá solicitar novamente a interrupção mediante protocolo. Para tanto, será necessário apresentar uma declaração de não ocupação de cargo ou atividade na área de formação técnica profissional, contendo nome completo, CPF, assinatura do requerente e data, além da carteira de trabalho digital com informações sobre vínculos empregatícios e dados de identificação. Se a solicitação estiver relacionada a motivo de saúde, o requerente deverá apresentar documento que comprove a carta de concessão ou decisão de benefício do INSS.
+
+Em caso de dúvidas ou necessidade de esclarecimentos adicionais, solicitamos que entre em contato pelo telefone (98) 98279-0023.`,
+            precisaNumero: true
+        }
+    },
+
+    deferimento: {
+
+        com_debitos: {
+            titulo: "Com débitos financeiros",
+            texto: `Registro INTERROMPIDO.
+Anotado conforme data da abertura do protocolo (solicitação).
+
+Embora a interrupção tenha sido deferida, é importante ressaltar que isso não isenta o profissional do pagamento das obrigações financeiras anteriores ou em aberto, conforme a Resolução Nº 141/2021, Art. 13º, Parágrafo Único e Resolução Nº 241/2023. Portanto, solicitamos gentilmente a quitação dos débitos pendentes, a fim de evitar transtornos no momento da reativação. Ressaltamos que o valor não pago permanecerá registrado em nosso sistema. Caso necessite de esclarecimentos adicionais por favor entrar em contato com  (98) 98279-0023.
+
+Comunicamos que poderá posteriormente solicitar a reativação do seu registro profissional caso queira trabalhar na função técnica.
+
+Ressaltamos que, conforme o Art. 35 da Resolução CFT nº 045/2018, é vedado o exercício de atividades fiscalizadas pelo sistema CFT/CRTs por profissionais técnicos industriais sem o devido registro ativo, o que destaca a importância da regularização para o desempenho das funções. Além disso, a Resolução 141/2021 do CFT, em seu Art. 19, determina que, caso seja constatado, durante o período de interrupção do registro, o exercício de atividades pelo profissional, este ficará sujeito à autuação por infração à legislação reguladora da profissão e por falta ética, sujeitando-se às cominações legais e regulamentares aplicáveis, cabendo o cancelamento da interrupção do registro.`
+        },
+
+        sem_debitos: {
+            titulo: "Sem débitos financeiros",
+            texto: `Registro INTERROMPIDO.
+Anotado conforme data da abertura do protocolo (solicitação).
+
+Comunicamos que poderá posteriormente solicitar a reativação do seu registro profissional caso queira trabalhar na função técnica.
+
+Ressaltamos que, conforme o Art. 35 da Resolução CFT nº 045/2018, é vedado o exercício de atividades fiscalizadas pelo sistema CFT/CRTs por profissionais técnicos industriais sem o devido registro ativo, o que destaca a importância da regularização para o desempenho das funções. Além disso, a Resolução 141/2021 do CFT, em seu Art. 19, determina que, caso seja constatado, durante o período de interrupção do registro, o exercício de atividades pelo profissional, este ficará sujeito à autuação por infração à legislação reguladora da profissão e por falta ética, sujeitando-se às cominações legais e regulamentares aplicáveis, cabendo o cancelamento da interrupção do registro.`
+        }
+
+    }
+
+};
+
+function carregarSelectIndeferimento(){
+
+    let select = document.getElementById("selectIndeferimento");
+    if(!select) return;
+
+    select.innerHTML = `<option value="">Selecione o motivo</option>`;
+
+    Object.keys(TEXTOS_INTERRUPCAO.indeferimento).forEach(key => {
+
+        let item = TEXTOS_INTERRUPCAO.indeferimento[key];
+
+        let opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = item.titulo;
+
+        select.appendChild(opt);
+    });
+}
+
+
+let callbackNumero = null;
+
+function abrirModalNumero(callback){
+
+    callbackNumero = callback;
+
+    let modal = document.getElementById("modalData"); // usa o mesmo modal
+    let input = document.getElementById("inputData");
+
+    if(input){
+        input.value = "";
+        input.placeholder = "Digite o CBO (ex: 1234-56)";
+    }
+
+    if(modal) modal.classList.remove("hidden");
+
+    setTimeout(()=>{
+        if(input){
+            input.focus();
+
+            input.onkeydown = function(e){
+                if(e.key === "Enter"){
+                    confirmarNumero();
+                }
+            }
+        }
+    },100);
+}
+
+function confirmarNumero(){
+
+    let input = document.getElementById("inputData");
+    if(!input) return;
+
+    let valor = input.value.trim();
+
+    if(!valor){
+        alert("Digite o número do CBO.");
+        return;
+    }
+
+    fecharModal();
+
+    if(callbackNumero){
+        callbackNumero(valor);
+    }
+}
+
+function confirmarModal(){
+
+    if(callbackNumero){
+        confirmarNumero();
+    }else{
+        confirmarData();
+    }
+}
+function forcarGeracaoInterrupcao(tipo){
+
+    let selectId = tipo === "indeferimento" ? "selectIndeferimento" : "selectDeferimentoInt";
+
+    let select = document.getElementById(selectId);
+    if(!select) return;
+
+    let chave = select.value;
+    let item = TEXTOS_INTERRUPCAO[tipo][chave];
+
+    if(item && item.precisaNumero){
+        gerarInterrupcao(tipo);
+    }
+}
+
+function carregarSelectDeferimento(){
+
+    let select = document.getElementById("selectDeferimentoInt");
+    if(!select) return;
+
+    select.innerHTML = `<option value="">Selecione o tipo</option>`;
+
+    Object.keys(TEXTOS_INTERRUPCAO.deferimento).forEach(key => {
+
+        let item = TEXTOS_INTERRUPCAO.deferimento[key];
+
+        let opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = item.titulo;
+
+        select.appendChild(opt);
+    });
+}
+
+function gerarTextoReativacao(){
+    let tipo = document.getElementById("tipoReativacao").value;
+    let nome = document.getElementById("nomeReativacao").value;
+    let saida = document.getElementById("saidaReativacao");
+
+    let textos = {
+        "comum": `Prezado(a) ${nome},
+
+Informamos que seu registro profissional foi reativado e encontra-se ATIVO.
+
+Para emissão do boleto de anuidade, acesse o seu ambiente profissional. Caso prefira, entre em contato com o setor de atendimento pelo número (98) 98279-0023 para mais informações.`,
+
+        "atualizacao": `Prezado(a) ${nome},
+
+Assunto: Reativação de Inativos
+
+Informamos que seu registro profissional encontra-se ATIVO, conforme a Resolução AD Referendum Normativa nº 14, de 08 de agosto de 2022.
+
+Identificamos que seu cadastro apresenta informações desatualizadas, o que pode impedir a emissão da carteira profissional e de outros documentos. Dessa forma, solicitamos a atualização cadastral por meio do protocolo “ATUALIZAÇÃO DE DADOS CADASTRAIS - PROFISSIONAL”, com a descrição “ATUALIZAÇÃO DE CADASTRO”, anexando os seguintes documentos:
+
+1. Documento de identificação atualizado;
+2. Certidão de quitação eleitoral atualizada;
+3. Comprovante de endereço atualizado.
+
+Observações:
+- O endereço deverá ser atualizado por meio do protocolo “ALTERAÇÃO DE ENDEREÇO PARA OUTRO REGIONAL” nos casos de mudança para outro CRT;
+- O comprovante de endereço deve estar atualizado, podendo estar em nome próprio, dos pais ou do cônjuge (neste caso, acompanhado da certidão de casamento), ou ser apresentada declaração de residência.
+
+A foto deverá ser encaminhada por meio do protocolo “INCLUSÃO DE FOTO”.`,
+
+        "definitivo": `Prezado(a) ${nome},
+
+Informamos que seu registro profissional foi alterado para DEFINITIVO e encontra-se ATIVO.
+
+Para emissão do boleto de anuidade, acesse o seu ambiente profissional. Caso prefira, entre em contato com o setor de atendimento pelo número (98) 98279-0023 para mais informações.`
+    };
+
+    saida.value = textos[tipo] || "";
+}
+
+function limparReativacao(){
+    document.getElementById("nomeReativacao").value = "";
+    document.getElementById("tipoReativacao").value = "";
+    document.getElementById("saidaReativacao").value = "";
+
+    document.getElementById("nomeReativacao").focus();
 }
