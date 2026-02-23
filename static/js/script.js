@@ -366,7 +366,7 @@ https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=shari
         texto:`Captura de tela não é aceita como documento militar.`
     },
 
-    miliar_incompleto:{
+    militar_incompleto:{
         titulo: "Militar incompleto",
         texto:`A prova de quitação militar apresentada está incompleta. Encaminhe o documento completo constando frente e verso.`
     }
