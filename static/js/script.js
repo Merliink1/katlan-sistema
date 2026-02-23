@@ -364,7 +364,7 @@ https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=shari
     militar_print:{
         titulo:"Print não aceito",
         texto:`Captura de tela não é aceita como documento militar.`
-    }
+    },
 
     miliar_incompleto:{
         titulo: "Militar incompleto",
