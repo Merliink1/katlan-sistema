@@ -532,9 +532,9 @@ body.dark .logo-menu{
 
 .cardAnalise .item{
     display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:6px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
 }
 
 .cardAnalise .item label{
@@ -544,7 +544,6 @@ body.dark .logo-menu{
     font-weight:600;
     color:#94a3b8;
     font-size:13px;
-    min-width:150px;
 }
 
 /* SVG */
@@ -559,6 +558,8 @@ body.dark .logo-menu{
 /* SELECT */
 .cardAnalise select{
     flex:1;
+    width:100%;
+    min-width:0;
 }
 
 /* ================= ANALISE UNICA ================= */
@@ -568,6 +569,7 @@ body.dark .logo-menu{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
     gap:12px;
+    margin-top:20px;
 }
 
 /* CARD */
@@ -680,6 +682,17 @@ body.dark .logo-menu{
     stroke:#94a3b8;
     fill:none;
     stroke-width:1.8;
+}
+
+.grid-analise{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:12px;
+}
+
+.cardAnalise{
+    width:100%;
+    min-width:0; /* 🔥 evita estourar grid */
 }
 
 /* ================= GRID INTERRUPÇÃO ================= */
