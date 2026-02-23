@@ -358,12 +358,17 @@ https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=shari
 
     militar_sem_carimbo:{
         titulo:"Sem carimbo",
-        texto:`O documento militar não possui os carimbos obrigatórios. Regularize junto ao órgão competente.`
+        texto:`O certificado de reservista encaminhado não se encontra com os carimbos conforme informações no verso. Solicitamos que verifique sua situação junto ao órgão competente e posteriormente encaminhe a documentação atualizada.`
     },
 
     militar_print:{
         titulo:"Print não aceito",
         texto:`Captura de tela não é aceita como documento militar.`
+    }
+
+    miliar_incompleto:{
+        titulo: "Militar incompleto",
+        texto:`A prova de quitação militar apresentada está incompleta. Encaminhe o documento completo constando frente e verso.`
     }
 
 };

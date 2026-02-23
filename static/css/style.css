@@ -713,8 +713,6 @@ body.dark .logo-menu{
 
 /* ================= GRID INTERRUPÇÃO ================= */
 
-/* ================= GRID INTERRUPÇÃO ================= */
-
 .grid-interrupcao{
     display:grid;
     grid-template-columns:1fr 1fr;
