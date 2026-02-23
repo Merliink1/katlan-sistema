@@ -168,6 +168,55 @@ RESOLUCOES = {
 "INSTRUMENTACAO": "RESOLUÇÃO Nº 260 DE 03 DE ABRIL DE 2024"
 }
 
+CURSOS_NOMES = {
+
+    "ELETROTECNICA": "ELETROTÉCNICA",
+    "ELETRONICA": "ELETRÔNICA",
+    "ELETROELETRONICA": "ELETROELETRÔNICA",
+    "TELECOMUNICACOES": "TELECOMUNICAÇÕES",
+    "REDE DE COMPUTADORES": "REDES DE COMPUTADORES",
+    "INFORMATICA": "INFORMÁTICA",
+    "MICROINFORMATICA": "MICROINFORMÁTICA",
+
+    "MECANICA": "MECÂNICA",
+    "ELETROMECANICA": "ELETROMECÂNICA",
+    "MECATRONICA": "MECATRÔNICA",
+    "AUTOMACAO INDUSTRIAL": "AUTOMAÇÃO INDUSTRIAL",
+    "MANUTENCAO AUTOMOTIVA": "MANUTENÇÃO AUTOMOTIVA",
+    "MANUTENCAO DE MAQUINAS INDUSTRIAIS": "MANUTENÇÃO DE MÁQUINAS INDUSTRIAIS",
+    "REFRIGERACAO E CLIMATIZACAO": "REFRIGERAÇÃO E CLIMATIZAÇÃO",
+
+    "EDIFICACOES": "EDIFICAÇÕES",
+    "ESTRADAS": "ESTRADAS",
+    "DESENHO DA CONSTRUCAO CIVIL": "DESENHO DA CONSTRUÇÃO CIVIL",
+
+    "MEIO AMBIENTE": "MEIO AMBIENTE",
+    "SANEAMENTO": "SANEAMENTO",
+
+    "MINERACAO": "MINERAÇÃO",
+    "AGRIMENSURA": "AGRIMENSURA",
+    "GEODESIA": "GEODÉSIA",
+    "CARTOGRAFIA": "CARTOGRAFIA",
+    "GEOPROCESSAMENTO": "GEOPROCESSAMENTO",
+
+    "QUIMICA": "QUÍMICA",
+    "ALIMENTOS": "ALIMENTOS",
+    "AGROINDUSTRIA": "AGROINDÚSTRIA",
+
+    "SOLDAGEM": "SOLDAGEM",
+    "METALURGIA": "METALURGIA",
+
+    "PETROLEO E GAS": "PETRÓLEO E GÁS",
+    "SISTEMAS DE ENERGIA RENOVAVEL": "SISTEMAS DE ENERGIA RENOVÁVEL",
+    "SISTEMA DE ENERGIA RENOVAVEL": "SISTEMAS DE ENERGIA RENOVÁVEL",
+    "EM SISTEMAS DE ENERGIA RENOVAVEL": "SISTEMAS DE ENERGIA RENOVÁVEL",
+
+    "DESIGN DE INTERIORES": "DESIGN DE INTERIORES",
+    "PAISAGISMO": "PAISAGISMO",
+    "PORTOS": "PORTOS",
+    "INSTRUMENTACAO": "INSTRUMENTAÇÃO"
+}
+
 # ================= ROTAS =================
 @app.route('/')
 def index():
@@ -247,10 +296,10 @@ def sistema():
         return redirect('/')
 
     return render_template(
-        'sistema.html',
-        usuario=session.get('user'),
-        cursos=RESOLUCOES.keys()
-    )
+    'sistema.html',
+    usuario=session.get('user'),
+    cursos=CURSOS_NOMES
+)
 
 # ================= LOGOUT =================
 @app.route('/logout')
@@ -461,8 +510,10 @@ def deferimento():
     try:
         data = request.json or {}
 
-        curso = (data.get("curso") or "").strip()
+        curso_original = (data.get("curso") or "").strip()
+        curso = normalizar(curso_original)
         tipo = data.get("tipo") or ""
+        nome_curso = CURSOS_NOMES.get(curso, curso_original.upper())
 
         if not curso:
             return jsonify({"texto": "Curso não informado"}), 400
@@ -472,13 +523,13 @@ def deferimento():
         # 🔥 TEXTO
         if tipo == "definitivo":
             texto = f"""REGISTRO DEFERIDO.
-Cadastro finalizado e ATIVO. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
+Cadastro finalizado e ATIVO. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {nome_curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
 Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua carteira profissional. Para mais informações sobre sua anuidade, entre em contato pelo canal (98) 98279-0023.
 """
         else:
             texto = f"""REGISTRO DEFERIDO.
-Cadastro finalizado e ATIVO. Por se tratar de Registro Provisório, o mesmo terá validade de 01 ano passando a constar da data de efetivação. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
+Cadastro finalizado e ATIVO. Por se tratar de Registro Provisório, o mesmo terá validade de 01 ano passando a constar da data de efetivação. Você poderá acessar o seu ambiente profissional através da senha encaminhada por e-mail. Para verificar suas atribuições técnicas com habilitação em {nome_curso}, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
 Por meio de seu ambiente profissional será possível gerar sua anuidade e, após a compensação do pagamento no sistema, poderá emitir sua certidão de quitação de pessoa física e ter acesso a sua carteira profissional digital. Para mais informações sobre sua anuidade, entre em contato pelo canal (98) 98279-0023
 """
@@ -493,7 +544,7 @@ Por meio de seu ambiente profissional será possível gerar sua anuidade e, apó
         """, (
             session.get('user'),
             "deferimento",
-            f"{curso} | {tipo}"
+            f"{nome_curso} | {tipo}"
         ))
 
         conn.commit()
@@ -890,12 +941,23 @@ def deferimento_titulo():
     try:
         data = request.json or {}
 
-        curso = (data.get("curso") or "").strip()
+        # 🔹 CAPTURA E NORMALIZA
+        curso_original = (data.get("curso") or "").strip()
+        curso = normalizar(curso_original)
 
+        # 🔒 VALIDAÇÃO
+        if not curso:
+            return jsonify({"texto": "Curso não informado"}), 400
+
+        # 🔹 NOME FORMATADO (COM ACENTO)
+        nome_curso = CURSOS_NOMES.get(curso, curso_original.upper())
+
+        # 🔹 RESOLUÇÃO
         resolucao = RESOLUCOES.get(curso, "RESOLUÇÃO NÃO IDENTIFICADA")
 
+        # 🔹 TEXTO
         texto = f"""INCLUSÃO DE TÍTULO DEFERIDA.
-Informamos que o título de Técnico em {curso} encontra-se cadastrado em seu registro profissional. Para verificar suas atribuições técnicas, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
+Informamos que o título de {nome_curso} encontra-se cadastrado em seu registro profissional. Para verificar suas atribuições técnicas, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
 Para que o título incluso conste na carteira digital (imediatamente) ou na 1ª ou 2ª via da carteira física, será necessário realizar a inclusão do título.
 Na guia FERRAMENTAS, selecione a opção "ALTERAR TÍTULOS IMPRESSOS NA CARTEIRA" e, posteriormente, escolha os títulos que deseja incluir e clique em SALVAR.
@@ -903,31 +965,30 @@ Na guia FERRAMENTAS, selecione a opção "ALTERAR TÍTULOS IMPRESSOS NA CARTEIRA
 Em casos de 1ª ou 2ª via da carteira física, a atualização será possível caso o documento ainda não tenha sido emitido ou enviado.
 """
 
-        # 🔥 REGRA DOS CURSOS
-        curso_check = normalizar(curso)
-
-        if any(x in curso_check for x in ["AGRIMENSURA", "GEODESIA", "CARTOGRAFIA", "GEOPROCESSAMENTO"]):
+        # 🔹 REGRA GEOREFERENCIAMENTO
+        if any(x in curso for x in ["AGRIMENSURA", "GEODESIA", "CARTOGRAFIA", "GEOPROCESSAMENTO"]):
             texto += '\nComunicamos que deverá solicitar mediante o protocolo a "Revisão de atribuições em Georreferenciamento" caso deseje emitir TRTs para atividades de georreferenciamento.'
 
-        # 🔥 SALVA HISTÓRICO
+        # 🔹 BANCO
         conn, cursor = get_db()
 
+        # 🔹 HISTÓRICO
         cursor.execute("""
             INSERT INTO historico (usuario, texto)
             VALUES (%s, %s)
         """, (
             session.get('user'),
-            f"INCLUSÃO DE TÍTULO - {curso}"
+            f"INCLUSÃO DE TÍTULO - {nome_curso}"
         ))
 
-        # 🔥 LOG
+        # 🔹 LOG
         cursor.execute("""
             INSERT INTO logs (usuario, acao, texto)
             VALUES (%s, %s, %s)
         """, (
             session.get('user'),
             "deferimento_titulo",
-            f"Curso: {curso}"
+            f"Curso: {nome_curso}"
         ))
 
         conn.commit()
@@ -943,7 +1004,7 @@ Em casos de 1ª ou 2ª via da carteira física, a atualização será possível 
             cursor.close()
         if conn:
             conn.close()
-        
+            
 @app.route('/log', methods=['POST'])
 def log():
 
