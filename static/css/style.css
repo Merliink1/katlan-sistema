@@ -9,9 +9,12 @@
 body{
     background:#f5f7fa;
     display:flex;
+    min-height:100vh;      /* 🔥 evita corte da tela */
+    overflow-x:hidden;     /* 🔥 evita scroll lateral bugado */
 }
-
 /* ================= TOPO ================= */
+/* ================= TOPO ================= */
+
 .topo{
     position:fixed;
     top:0;
@@ -20,13 +23,16 @@ body{
     height:70px;
     background:#0f2a44;
     color:#fff;
+
     display:flex;
     align-items:center;
-    justify-content:flex-end; /* 🔥 joga tudo pra direita */
+    justify-content:flex-end;
+
     padding:0 20px;
     z-index:1000;
 }
 
+/* LOGO (caso você use depois) */
 .logo{
     display:flex;
     align-items:center;
@@ -44,6 +50,7 @@ body{
     color:#94a3b8;
 }
 
+/* INFO USUÁRIO */
 .info-user{
     display:flex;
     align-items:center;
@@ -51,6 +58,7 @@ body{
     font-size:14px;
 }
 
+/* BOTÕES DO TOPO */
 .info-user button{
     background:#1d4ed8;
     border:none;
@@ -58,15 +66,16 @@ body{
     padding:6px 12px;
     border-radius:6px;
     cursor:pointer;
+    transition:0.2s;
 }
 
 .info-user button:hover{
     background:#2563eb;
 }
 
-
-
 /* ================= MENU ================= */
+/* ================= MENU ================= */
+
 .menu-lateral{
     position:fixed;
     left:0;
@@ -74,11 +83,15 @@ body{
     width:220px;
     height:100vh;
     background:#0f172a;
+
     display:flex;
     flex-direction:column;
-    gap:15px;
+    gap:10px;
+
+    overflow-y:auto; /* 🔥 evita cortar menu */
 }
 
+/* BOTÕES DO MENU */
 .menu-lateral button{
     display:flex;
     align-items:center;
@@ -88,19 +101,24 @@ body{
     border:none;
     color:#cbd5e1;
     text-align:left;
+
     padding:12px 20px;
     cursor:pointer;
     font-size:14px;
+
     transition:0.2s;
     border-left:3px solid transparent;
 }
 
+/* HOVER */
 .menu-lateral button:hover{
     background:#1e293b;
     border-left:3px solid #3b82f6;
     color:#fff;
-
 }
+
+/* ================= BOTÕES GERAIS ================= */
+/* 🔥 importante separar do menu */
 
 button{
     padding:10px 14px;
@@ -111,36 +129,43 @@ button{
     cursor:pointer;
     margin-right:5px;
     font-size:14px;
+    transition:0.2s;
 }
 
 button:hover{
     background:#1d4ed8;
 }
 
-/* SUBMENU */
+/* ================= SUBMENU ================= */
+
 .menu-hover{
     position:relative;
 }
 
+/* SUBMENU ESCONDIDO */
 .submenu{
     display:none;
     flex-direction:column;
     background:#1e293b;
 }
 
+/* MOSTRAR NO HOVER */
 .menu-hover:hover .submenu{
     display:flex;
 }
 
+/* BOTÕES DO SUBMENU */
 .submenu button{
     padding-left:40px;
-    font-size:14px;
+    font-size:13px;
 }
 
-/* NOTIF */
+/* ================= NOTIF ================= */
+
 #notif{
-    color:red;
+    color:#ef4444;
     margin-left:5px;
+    font-size:12px;
 }
 
 /* ================= CONTAINER ================= */
@@ -164,7 +189,6 @@ button:hover{
     display:none !important;
 }
 
-
 /* ================= TITULOS ================= */
 h2{
     font-size:22px;
@@ -184,13 +208,27 @@ input, select, textarea{
     border-radius:6px;
     border:1px solid #cbd5e1;
     font-size:14px;
+    transition:0.2s;
 }
 
+/* FOCO */
+input:focus,
+select:focus,
+textarea:focus{
+    outline:none;
+    border-color:#3b82f6;
+    box-shadow:0 0 0 2px rgba(59,130,246,0.2);
+}
+
+/* TEXTAREA PADRÃO */
 textarea{
-    min-height:150px;
+    min-height:120px; /* 🔥 menor pra não quebrar layout */
+    resize:vertical;
 }
 
 /* ================= BOTÕES ================= */
+
+/* ⚠️ manter apenas um padrão global */
 button{
     padding:10px 14px;
     border:none;
@@ -199,12 +237,14 @@ button{
     color:#fff;
     cursor:pointer;
     margin-right:5px;
+    transition:0.2s;
 }
 
 button:hover{
     background:#2563eb;
 }
 
+/* BOTÃO PERIGO */
 .btn-danger{
     background:#dc2626;
 }
@@ -281,7 +321,7 @@ button:hover{
     background:#fff;
     padding:20px;
     border-radius:10px;
-    width:300px;
+    width:320px; /* 🔥 leve ajuste */
     max-width:90%;
 }
 
@@ -299,8 +339,14 @@ button:hover{
     .topo{
         left:180px;
     }
+
+    /* 🔥 SIMULTÂNEA RESPONSIVA */
+    .grid-analise{
+        grid-template-columns:1fr;
+    }
 }
 
+/* ================= MENU ICONES ================= */
 .menu-lateral button{
     display:flex;
     align-items:center;
@@ -312,6 +358,7 @@ button:hover{
     height:16px;
 }
 
+/* ================= DARK MODE ================= */
 body.dark{
     background:#0f172a;
     color:#e2e8f0;
@@ -346,14 +393,14 @@ body.dark .menu-lateral{
     background:#020617;
 }
 
-/* ================= ANALISE GRID ================= */
+/* ================= ANALISE SIMULTANEA ================= */
 
 .grid-analise{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
-    gap:12px;
+    gap:18px;
+    margin-top:10px;
 }
-
 
 /* TOPO */
 .top-analise{
@@ -363,6 +410,7 @@ body.dark .menu-lateral{
     margin-bottom:20px;
 }
 
+/* BOTÃO RESET */
 .btn-reset{
     background:#475569;
 }
@@ -370,40 +418,58 @@ body.dark .menu-lateral{
 .btn-reset:hover{
     background:#64748b;
 }
-
-/* ================= CARD ================= */
+/* ================= CARD ANALISE ================= */
 
 .cardAnalise{
-    background:#28354b; /* suavizado */
+    background:#28354b;
     border:1px solid #334155;
-    border-radius:10px;
-    padding:8px;
+    border-radius:12px;
+    padding:12px;
     color:#e2e8f0;
+
+    display:flex;
+    flex-direction:column;
 }
 
-/* ================= TITULO ================= */
+/* ================= TOPO ================= */
 
 .card-topo{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:10px;
+    margin-bottom:12px;
 }
 
 .card-topo strong{
-    color:#60a5fa; /* azul mais leve */
+    color:#60a5fa;
+    font-size:14px;
 }
 
 /* ================= BOTÕES ================= */
 
-.card-topo .acoes button{
-    padding:5px 10px;
-    font-size:12px;
+.card-topo .acoes{
+    display:flex;
+    gap:8px;
 }
 
+.card-topo .acoes button{
+    padding:4px 10px;
+    font-size:12px;
+    border-radius:6px;
+}
+
+/* COPIAR */
+.btn-copiar{
+    background:#16a34a;
+}
 
 .btn-copiar:hover{
     background:#22c55e;
+}
+
+/* LIMPAR */
+.btn-limpar{
+    background:#dc2626;
 }
 
 .btn-limpar:hover{
@@ -415,15 +481,68 @@ body.dark .menu-lateral{
 .cardAnalise select,
 .cardAnalise textarea,
 .cardAnalise input{
-    background:#0f172a; /* mais leve que o anterior */
+    background:#0f172a;
     color:#e2e8f0;
     border:1px solid #334155;
+}
+
+/* ================= LINHA (DOCUMENTO + SELECT) ================= */
+
+.cardAnalise .item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+}
+
+/* LABEL */
+.cardAnalise .item label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    font-weight:600;
+    color:#94a3b8;
+    font-size:13px;
+
+    width:140px;
+    min-width:140px;
+}
+
+/* ÍCONE */
+.cardAnalise .item label svg{
+    width:14px;
+    height:14px;
+    stroke:#60a5fa;
+    fill:none;
+    stroke-width:2;
+}
+
+/* SELECT */
+.cardAnalise .item select{
+    flex:1;
+    min-width:0;
+
+    padding:5px 6px;
+    font-size:12px;
+
+    background:#0f172a;
+    border:1px solid #334155;
+    border-radius:6px;
+    color:#e2e8f0;
 }
 
 /* ================= TEXTAREA ================= */
 
 .cardAnalise textarea{
-    min-height:90px;
+    margin-top:10px;
+    min-height:110px;
+    resize:none;
+
+    background:#0f172a;
+    border:1px solid #334155;
+    border-radius:8px;
+    color:#e2e8f0;
 }
 
 /* ================= TAG ================= */
@@ -439,37 +558,12 @@ body.dark .menu-lateral{
     border-left:3px solid #3b82f6;
 }
 
+/* ================= LOGO MENU ================= */
 
-/* LOGO NO MENU */
 .logo-menu{
     display:flex;
     align-items:center;
     gap:10px;
-    padding:20px 15px;
-    border-bottom:1px solid #e1e4eb;
-}
-
-.logo-menu strong{
-    display:block;
-    font-size:16px;
-    color:#e2e8f0;
-}
-
-.logo-menu span{
-    font-size:12px;
-    color:#94a3b8;
-}
-
-/* modo escuro */
-body.dark .logo-menu{
-    border-bottom:1px solid #334155;
-}
-
-.menu-lateral{
-    overflow-y:auto;
-}
-
-.logo-menu{
     padding:20px;
     border-bottom:1px solid #1e293b;
 }
@@ -486,85 +580,14 @@ body.dark .logo-menu{
     color:#94a3b8;
 }
 
-/* TEXTO (Diploma, Histórico...) */
-.linha-campo label{
-    font-size:12px;
-    color:#6ea3d8;
-    min-width:110px;
-}
-
-/* SELECT */
-.linha-campo select{
-    flex:1;
-    padding:4px 6px;
-    font-size:12px;
-}
-
-.item{
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-
-
-.item label{
-    display:flex;
-    align-items:center;
-    gap:6px;
-
-    min-width:130px; /* 🔥 controla alinhamento */
-    font-size:13px;
-    color:#94a3b8;
-    font-weight:600;
-}
-
-.item select{
-    flex:1;
-    min-width:0; /* 🔥 evita quebra estranha */
-}
-
-
-.cardAnalise .item label{
-    font-weight:600;   /* deixa em negrito */
-    color:#94a3b8;     /* cinza suave (melhor que azul forte) */
-    font-size:13px;
-}
-
-.cardAnalise .item{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.cardAnalise .item label{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-weight:600;
-    color:#94a3b8;
-    font-size:13px;
-    width: 140px;
-    min-width:140PX;
-}
-
-/* SVG */
-.cardAnalise .item label svg{
-    width:14px;
-    height:14px;
-    stroke:#60a5fa;
-    fill:none;
-    stroke-width:2;
-}
-
-/* SELECT */
-.cardAnalise select{
-    flex:1;
-    min-width:0;
+/* DARK */
+body.dark .logo-menu{
+    border-bottom:1px solid #334155;
 }
 
 /* ================= ANALISE UNICA ================= */
 
-/* GRID 3 COLUNAS */
+/* GRID */
 .grid-unica{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
@@ -580,7 +603,6 @@ body.dark .logo-menu{
     padding:12px;
 }
 
-/* HOVER */
 .card-item:hover{
     border-color:#4f6aa3;
 }
@@ -591,6 +613,7 @@ body.dark .logo-menu{
     font-weight:600;
     color:#94a3b8;
     margin-bottom:8px;
+
     display:flex;
     align-items:center;
     gap:6px;
@@ -601,6 +624,7 @@ body.dark .logo-menu{
     width:100%;
     padding:7px 8px;
     font-size:13px;
+
     background:#0f172a;
     border:1px solid #3a465a;
     border-radius:6px;
@@ -626,20 +650,20 @@ body.dark .logo-menu{
     height:45px;
 }
 
-/* BOTÕES PADRÃO */
-.btn-copiar{
+/* 🔥 IMPORTANTE: NÃO CONFLITAR COM SIMULTÂNEA */
+.acoes-unica .btn-copiar{
     background:#3b82f6;
 }
 
-.btn-copiar:hover{
+.acoes-unica .btn-copiar:hover{
     background:#2563eb;
 }
 
-.btn-limpar{
+.acoes-unica .btn-limpar{
     background:#dc2626;
 }
 
-.btn-limpar:hover{
+.acoes-unica .btn-limpar:hover{
     background:#b91c1c;
 }
 
@@ -647,6 +671,7 @@ body.dark .logo-menu{
 .box-final textarea{
     flex:1;
     min-height:140px;
+
     padding:10px;
     background:#0f172a;
     border:1px solid #3a465a;
@@ -654,23 +679,8 @@ body.dark .logo-menu{
     color:#e2e8f0;
 }
 
-/* FIX TAMANHO DOS ICONES */
-.item-topo svg,
-.item label svg{
-    width:14px;
-    height:14px;
-    min-width:14px; /* evita esticar */
-    max-width:14px;
-    flex-shrink:0;
+/* ================= ICONES ================= */
 
-    stroke:#94a3b8;
-    fill:none;
-    stroke-width:1.8;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-}
-
-/* FIX FINAL */
 .item-topo svg,
 .item label svg{
     width:14px;
@@ -682,34 +692,70 @@ body.dark .logo-menu{
     stroke:#94a3b8;
     fill:none;
     stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
 }
 
+/* ================= CORREÇÃO SIMULTANEA ================= */
+
+/* 🔥 ESSA LINHA AQUI É A MAIS IMPORTANTE */
 .grid-analise{
     display:grid;
-    grid-template-columns:repeat(3, minmax(360px,1fr));
-    gap:16px;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
 }
 
+/* garante que o card não estoure */
 .cardAnalise{
     width:100%;
-    min-width:0; /* 🔥 evita estourar grid */
+    min-width:0;
 }
 
 /* ================= GRID INTERRUPÇÃO ================= */
 
+/* ================= GRID INTERRUPÇÃO ================= */
+
 .grid-interrupcao{
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* 🔥 duas colunas iguais */
-    gap: 20px;
-    width: 100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    width:100%;
 }
 
-/* força os cards a respeitar o grid */
+/* garante que o card respeite o grid */
 .grid-interrupcao .cardAnalise{
-    width: 100%;
+    width:100%;
+    min-width:0;
 }
 
+/* TITULO */
 .cardAnalise h4{
-    margin-bottom: 14px;
-    font-weight: 600;
+    margin-bottom:14px;
+    font-weight:600;
+    font-size:15px;
+    color:#60a5fa;
+}
+
+/* SELECT */
+.grid-interrupcao select{
+    width:100%;
+    margin-bottom:10px;
+}
+
+/* TEXTAREA */
+.grid-interrupcao textarea{
+    min-height:120px;
+}
+
+/* BOTÕES */
+.grid-interrupcao button{
+    margin-top:5px;
+}
+
+/* ================= RESPONSIVO ================= */
+
+@media(max-width:900px){
+    .grid-interrupcao{
+        grid-template-columns:1fr;
+    }
 }
