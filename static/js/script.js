@@ -643,7 +643,7 @@ function montarAnaliseSimultanea(){
     let container = document.getElementById("containerAnalise");
     container.innerHTML = "";
 
-    for(let i=1;i<=6;i++){ // 🔥 AGORA SÃO 6
+    for(let i=1;i<=6;i++){
 
         selecoesSim[i]=[];
 
@@ -656,8 +656,8 @@ function montarAnaliseSimultanea(){
             <strong>PROFISSIONAL ${i}</strong>
 
             <div class="acoes">
-                <button class="btn-copy" onclick="copiarTexto('saida${i}')">COPIAR</button>
-                <button class="btn-danger" onclick="limparSim(${i})">LIMPAR</button
+                <button class="btn-copiar" onclick="copiarTexto('saida${i}')">COPIAR</button>
+                <button class="btn-limpar" onclick="limparSim(${i})">LIMPAR</button>
             </div>
         </div>
 
@@ -685,17 +685,22 @@ function montarAnaliseSimultanea(){
 function campoSim(i,nome,tipo){
     return `
     <div class="item">
+
         <label>
             ${icone(tipo)}
             <span>${nome}</span>
         </label>
+
         <select onchange="addTextoSim(this,${i})">
             <option value="">Selecionar</option>
+
             ${Object.entries(DESPACHOS)
-                .filter(([k]) => k.startsWith(tipo)) // 🔥 CORRIGIDO
+                .filter(([k]) => k.startsWith(tipo + "_"))
                 .map(([k,v])=>`<option value="${k}">${v.titulo}</option>`)
                 .join("")}
+
         </select>
+
     </div>`;
 }
 
@@ -1378,8 +1383,6 @@ Informamos que seu registro profissional foi reativado e encontra-se ATIVO.
 Para emissão do boleto de anuidade, acesse o seu ambiente profissional. Caso prefira, entre em contato com o setor de atendimento pelo número (98) 98279-0023 para mais informações.`,
 
         "atualizacao": `Prezado(a) ${nome},
-
-Assunto: Reativação de Inativos
 
 Informamos que seu registro profissional encontra-se ATIVO, conforme a Resolução AD Referendum Normativa nº 14, de 08 de agosto de 2022.
 
