@@ -28,7 +28,7 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
-        user TEXT UNIQUE,
+        username TEXT UNIQUE,
         senha TEXT,
         perfil TEXT,
         ativo BOOLEAN DEFAULT TRUE
@@ -70,13 +70,13 @@ def init_db():
     conn.commit()
 
     # 🔥 CRIA ADMIN SE NÃO EXISTIR
-    cursor.execute("SELECT id FROM usuarios WHERE user=%s", ("admin",))
+    cursor.execute("SELECT id FROM usuarios WHERE username=%s", ("admin",))
     if not cursor.fetchone():
 
         senha_hash = bcrypt.hashpw("123".encode(), bcrypt.gensalt()).decode()
 
         cursor.execute(
-            "INSERT INTO usuarios (user, senha, perfil) VALUES (%s, %s, %s)",
+            "INSERT INTO usuarios (username, senha, perfil) VALUES (%s, %s, %s)",
             ("admin", senha_hash, "admin")
         )
 
@@ -191,10 +191,10 @@ def login():
         conn, cursor = get_db()
 
         cursor.execute("""
-            SELECT user, senha, perfil, ativo
-            FROM usuarios
-            WHERE user=%s
-        """, (user,))
+        SELECT username, senha, perfil, ativo
+        FROM usuarios
+        WHERE username=%s
+    """, (user,))
 
         u = cursor.fetchone()
 
@@ -524,9 +524,9 @@ def listar_usuarios():
         conn, cursor = get_db()
 
         cursor.execute("""
-            SELECT user, perfil, ativo
+            SELECT username, perfil, ativo
             FROM usuarios
-            ORDER BY user
+            ORDER BY username
         """)
 
         dados = cursor.fetchall()
@@ -577,7 +577,7 @@ def alterar_senha():
         cursor.execute("""
             UPDATE usuarios 
             SET senha=%s 
-            WHERE user=%s
+            WHERE username=%s
         """, (senha_hash, user))
 
         conn.commit()
@@ -625,7 +625,8 @@ def excluir_usuario():
 
         conn, cursor = get_db()
 
-        cursor.execute("DELETE FROM usuarios WHERE user=%s", (user,))
+        cursor.execute("DELETE FROM usuarios WHERE username=%s", (user,))
+
         conn.commit()
 
         # 🔥 LOG
@@ -683,7 +684,7 @@ def toggle_usuario():
         conn, cursor = get_db()
 
         cursor.execute(
-            "SELECT ativo FROM usuarios WHERE user=%s",
+            "SELECT ativo FROM usuarios WHERE username=%s",
             (user,)
         )
 
@@ -695,7 +696,7 @@ def toggle_usuario():
         novo = not atual[0]
 
         cursor.execute(
-            "UPDATE usuarios SET ativo=%s WHERE user=%s",
+            "UPDATE usuarios SET ativo=%s WHERE username=%s",
             (novo, user)
         )
 
@@ -850,7 +851,7 @@ def cadastrar_usuario():
 
         conn, cursor = get_db()
 
-        cursor.execute("SELECT id FROM usuarios WHERE user=%s", (user,))
+        cursor.execute("SELECT id FROM usuarios WHERE username=%s", (user,))
         if cursor.fetchone():
             return jsonify({"msg": "Usuário já existe"}), 400
 
@@ -858,8 +859,8 @@ def cadastrar_usuario():
         senha_hash = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode()
 
         cursor.execute(
-            "INSERT INTO usuarios (user, senha, perfil) VALUES (%s, %s, %s)",
-            (user, senha_hash, perfil)
+         "INSERT INTO usuarios (username, senha, perfil) VALUES (%s, %s, %s)",
+        (user, senha_hash, perfil)
         )
 
         conn.commit()
@@ -1073,6 +1074,5 @@ def relatorio():
 
 # ================= EXEC =================
 if __name__ == '__main__':
-    print("Rodando local...")
-    app.run(debug=True)
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
