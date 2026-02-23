@@ -532,9 +532,8 @@ body.dark .logo-menu{
 
 .cardAnalise .item{
     display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:4px;
+    align-items:center;
+    gap:10px;
 }
 
 .cardAnalise .item label{
@@ -544,6 +543,8 @@ body.dark .logo-menu{
     font-weight:600;
     color:#94a3b8;
     font-size:13px;
+    width: 140px;
+    min-width:140PX;
 }
 
 /* SVG */
@@ -558,7 +559,6 @@ body.dark .logo-menu{
 /* SELECT */
 .cardAnalise select{
     flex:1;
-    width:100%;
     min-width:0;
 }
 
@@ -686,8 +686,8 @@ body.dark .logo-menu{
 
 .grid-analise{
     display:grid;
-    grid-template-columns:repeat(3, minmax(0,1fr));
-    gap:12px;
+    grid-template-columns:repeat(3, minmax(360px,1fr));
+    gap:16px;
 }
 
 .cardAnalise{
