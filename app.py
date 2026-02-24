@@ -957,7 +957,7 @@ def deferimento_titulo():
 
         # 🔹 TEXTO
         texto = f"""INCLUSÃO DE TÍTULO DEFERIDA.
-Informamos que o título de curso técnico em {nome_curso} encontra-se cadastrado em seu registro profissional. Para verificar suas atribuições técnicas, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
+Informamos que o título de curso técnico em {nome_curso} se encontra cadastrado em seu registro profissional. Para verificar suas atribuições técnicas, consulte a {resolucao}, onde constam as responsabilidades e diretrizes específicas para o exercício de sua profissão.
 
 Para que o título incluso conste na carteira digital (imediatamente) ou na 1ª ou 2ª via da carteira física, será necessário realizar a inclusão do título.
 Na guia FERRAMENTAS, selecione a opção "ALTERAR TÍTULOS IMPRESSOS NA CARTEIRA" e, posteriormente, escolha os títulos que deseja incluir e clique em SALVAR.
