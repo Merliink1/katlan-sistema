@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
+<!-- 🔥 ADICIONA ISSO -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
@@ -112,6 +115,12 @@
         stroke="currentColor" fill="none" stroke-width="2"/>
     </svg>
     Admin
+</button>
+{% endif %}
+
+{% if session.get('perfil') == 'admin' %}
+<button onclick="abrir('relatorio', this)">
+    Relatório
 </button>
 {% endif %}
 
@@ -339,6 +348,26 @@
     </div>
 </div>
 
+<div id="relatorio" class="card hidden">
+
+<h2>Dashboard de Produtividade</h2>
+
+<div class="cardsResumo">
+
+    <div class="cardResumo">
+        <h4>Total de Ações</h4>
+        <p id="totalAcoes">0</p>
+    </div>
+
+</div>
+
+<canvas id="graficoRelatorio" height="100"></canvas>
+
+<h3>Ranking</h3>
+
+<table id="tabelaRelatorio"></table>
+
+</div>
 
 <script>
 let usuario = "{{usuario}}";

@@ -29,9 +29,14 @@ function abrir(id, btn){
     }
 
     if(id === 'interrupcaoRegistro'){
-    carregarSelectIndeferimento();
-    carregarSelectDeferimento();
-}
+        carregarSelectIndeferimento();
+        carregarSelectDeferimento();
+    }
+
+    // 🔥 ADICIONA ISSO
+    if(id === 'relatorio'){
+        carregarRelatorio();
+    }
 }
 
 // ================= LOGOUT =================
@@ -316,7 +321,7 @@ https://drive.google.com/file/d/1o_0_3avoY0ZVdZICBq1MeZ6NQIfTZUDn/view?usp=shari
     },
 
     eleitor_desatualizado:{
-        titulo:"Desatualização",
+        titulo:"Desatualizado",
         texto:`A Certidão de Quitação Eleitoral apresentada está desatualizada portanto, verifique a sua situação com a justiça eleitoral e posteriormente encaminhe a documentação atualizada.`
     },
 
@@ -986,6 +991,76 @@ function gerarDefer(){
     });
 }
 
+
+let grafico = null;
+
+function carregarRelatorio(){
+
+    fetch('/relatorio')
+    .then(r => {
+        if(!r.ok) throw new Error("Erro ao carregar");
+        return r.json();
+    })
+    .then(data => {
+
+        // 🔥 TOTAL
+        document.getElementById('totalAcoes').innerText = data.total;
+
+        let tabela = document.getElementById('tabelaRelatorio');
+
+        let html = `
+            <tr>
+                <th>Usuário</th>
+                <th>Ações</th>
+            </tr>
+        `;
+
+        let labels = [];
+        let valores = [];
+
+        data.ranking.forEach(item => {
+
+            html += `
+                <tr>
+                    <td>${item.usuario}</td>
+                    <td>${item.acoes}</td>
+                </tr>
+            `;
+
+            labels.push(item.usuario);
+            valores.push(item.acoes);
+        });
+
+        tabela.innerHTML = html;
+
+        // 🔥 GRÁFICO
+        let ctx = document.getElementById('graficoRelatorio').getContext('2d');
+
+        if(grafico){
+            grafico.destroy();
+        }
+
+        grafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ações por usuário',
+                    data: valores
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Erro ao carregar dashboard");
+    });
+}
+
 // ================= ADMIN =================
 
 function carregarUsuarios(){
@@ -1427,6 +1502,44 @@ Para emissão do boleto de anuidade, acesse o seu ambiente profissional. Caso pr
     };
 
     saida.value = textos[tipo] || "";
+}
+
+function carregarRelatorio(){
+
+    fetch('/relatorio')
+    .then(r => {
+        if(!r.ok){
+            throw new Error("Erro ao carregar relatório");
+        }
+        return r.json();
+    })
+    .then(data => {
+
+        let tabela = document.getElementById('tabelaRelatorio');
+
+        let html = `
+            <tr>
+                <th>Usuário</th>
+                <th>Ações</th>
+            </tr>
+        `;
+
+        data.forEach(item => {
+            html += `
+                <tr>
+                    <td>${item.usuario}</td>
+                    <td>${item.acoes}</td>
+                </tr>
+            `;
+        });
+
+        tabela.innerHTML = html;
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Erro ao carregar relatório");
+    });
 }
 
 function limparReativacao(){

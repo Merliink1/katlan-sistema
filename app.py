@@ -97,6 +97,25 @@ def carregar(arq):
     with open(arq) as f:
         return json.load(f)
 
+import re
+
+def normalizar(texto):
+    if not texto:
+        return ""
+
+    texto = texto.lower()
+    texto = unicodedata.normalize('NFD', texto)
+    texto = ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
+
+    # remove "tecnico em", "tecnico de", etc
+    texto = re.sub(r'\btecnico\b', '', texto)
+    texto = re.sub(r'\bem\b', '', texto)
+    texto = re.sub(r'\bde\b', '', texto)
+
+    texto = re.sub(r'\s+', ' ', texto)
+
+    return texto.strip()
+
 def salvar(arq, dados):
     with open(arq, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
@@ -1057,16 +1076,12 @@ def relatorio():
     if 'user' not in session:
         return jsonify({"erro": "não logado"}), 401
 
-    # 🔒 apenas admin
     if session.get('perfil') != 'admin':
         return jsonify({"erro": "sem permissão"}), 403
 
-    conn = None
-    cursor = None
+    conn, cursor = get_db()
 
     try:
-        conn, cursor = get_db()
-
         cursor.execute("""
             SELECT usuario, COUNT(*) AS total
             FROM logs
@@ -1076,44 +1091,32 @@ def relatorio():
 
         dados = cursor.fetchall()
 
-        lista = []
+        ranking = []
+        total_geral = 0
 
         for d in dados:
-            lista.append({
-                "usuario": d[0] or "Desconhecido",
-                "acoes": int(d[1])
+            usuario = d[0] or "Desconhecido"
+            acoes = int(d[1])
+
+            ranking.append({
+                "usuario": usuario,
+                "acoes": acoes
             })
 
-        return jsonify(lista)
+            total_geral += acoes
+
+        return jsonify({
+            "total": total_geral,
+            "ranking": ranking
+        })
 
     except Exception as e:
         print("ERRO RELATORIO:", e)
         return jsonify({"erro": "falha ao gerar relatório"}), 500
 
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-import unicodedata
-import re
-
-def normalizar(texto):
-    if not texto:
-        return ""
-
-    texto = texto.lower()
-    texto = unicodedata.normalize('NFD', texto)
-    texto = ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
-
-    texto = re.sub(r'\btecnico\b', '', texto)
-    texto = re.sub(r'\btécnico\b', '', texto)
-    texto = re.sub(r'\bem\b', '', texto)
-    texto = re.sub(r'\bde\b', '', texto)
-    texto = re.sub(r'\s+', ' ', texto)
-
-    return texto.strip()
+        cursor.close()
+        conn.close()
 
 @app.route('/listar_usuarios')
 def listar_usuarios():
