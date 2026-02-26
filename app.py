@@ -1115,6 +1115,47 @@ def normalizar(texto):
 
     return texto.strip()
 
+@app.route('/listar_usuarios')
+def listar_usuarios():
+
+    if 'user' not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db()
+
+        cursor.execute("""
+            SELECT username, perfil, ativo
+            FROM usuarios
+            ORDER BY username
+        """)
+
+        dados = cursor.fetchall()
+
+        lista = []
+
+        for u in dados:
+            lista.append({
+                "user": u[0],
+                "perfil": u[1],
+                "ativo": u[2]
+            })
+
+        return jsonify(lista)
+
+    except Exception as e:
+        print("ERRO LISTAR USUARIOS:", e)
+        return jsonify({"erro": "falha ao listar"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 # ================= EXEC =================
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
