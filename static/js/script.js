@@ -924,9 +924,25 @@ function abrirDeferSimultaneo(){
 
 console.log("JS carregado");
 
+function normalizarCurso(texto){
+
+    if(!texto) return "";
+
+    return texto
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove acento
+        .replace(/\btecnico\b/g, "")
+        .replace(/\btécnico\b/g, "")
+        .replace(/\bem\b/g, "")
+        .replace(/\bde\b/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function gerarDefer(){
 
-    let curso = document.getElementById("curso")?.value || "";
+    let cursoOriginal = document.getElementById("curso")?.value || "";
+    let curso = normalizarCurso(cursoOriginal);
     let tipo = document.getElementById("tipo")?.value;
     let area = document.getElementById("saidaDefer");
 
@@ -950,8 +966,7 @@ function gerarDefer(){
 
         let texto = res.texto || "";
 
-        // 🔥 REGRA ESPECIAL DE CURSOS
-        let cursoUpper = curso.toUpperCase();
+        let cursoUpper = cursoOriginal.toUpperCase();
 
         if(
             cursoUpper.includes("AGRIMENSURA") ||
@@ -1134,7 +1149,8 @@ function limparCampo(id){
 
 function gerarDeferTitulo(){
 
-    let curso = document.getElementById("cursoTitulo")?.value;
+    let cursoOriginal = document.getElementById("cursoTitulo")?.value || "";
+    let curso = normalizarCurso(cursoOriginal);
     let area = document.getElementById("saidaDeferTitulo");
 
     if(!curso){
