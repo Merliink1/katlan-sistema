@@ -555,7 +555,6 @@ function campoUnico(nome,tipo,icone){
     </div>`;
 }
 
-
 function addTextoUnico(sel){
 
     let key = sel.value;
@@ -991,7 +990,6 @@ function gerarDefer(){
     });
 }
 
-
 let grafico = null;
 
 function carregarRelatorio(){
@@ -1002,6 +1000,8 @@ function carregarRelatorio(){
         return r.json();
     })
     .then(data => {
+
+        console.log(data); // 🔍 DEBUG
 
         // 🔥 TOTAL
         document.getElementById('totalAcoes').innerText = data.total;
@@ -1018,6 +1018,7 @@ function carregarRelatorio(){
         let labels = [];
         let valores = [];
 
+        // 🔥 CORRETO AQUI
         data.ranking.forEach(item => {
 
             html += `
@@ -1060,7 +1061,6 @@ function carregarRelatorio(){
         alert("Erro ao carregar dashboard");
     });
 }
-
 // ================= ADMIN =================
 
 function carregarUsuarios(){
