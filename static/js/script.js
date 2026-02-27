@@ -33,9 +33,9 @@ function abrir(id, btn){
         carregarSelectDeferimento();
     }
 
-    // 🔥 ADICIONA ISSO
     if(id === 'relatorio'){
-        carregarRelatorio();
+    carregarUsuariosRelatorio();
+    carregarRelatorio();
     }
 }
 
@@ -994,17 +994,25 @@ let grafico = null;
 
 function carregarRelatorio(){
 
-    fetch('/relatorio')
-    .then(r => {
-        if(!r.ok) throw new Error("Erro ao carregar");
-        return r.json();
+    let data = document.getElementById("filtroData")?.value;
+    let usuario = document.getElementById("filtroUsuario")?.value;
+    let assunto = document.getElementById("filtroAssunto")?.value;
+
+    fetch('/relatorio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            data: data,
+            usuario: usuario,
+            assunto: assunto
+        })
     })
-    .then(data => {
+    .then(r => r.json())
+    .then(res => {
 
-        console.log(data); // 🔍 DEBUG
-
-        // 🔥 TOTAL
-        document.getElementById('totalAcoes').innerText = data.total;
+        document.getElementById('totalAcoes').innerText = res.total;
 
         let tabela = document.getElementById('tabelaRelatorio');
 
@@ -1018,8 +1026,7 @@ function carregarRelatorio(){
         let labels = [];
         let valores = [];
 
-        // 🔥 CORRETO AQUI
-        data.ranking.forEach(item => {
+        res.ranking.forEach(item => {
 
             html += `
                 <tr>
@@ -1034,7 +1041,6 @@ function carregarRelatorio(){
 
         tabela.innerHTML = html;
 
-        // 🔥 GRÁFICO
         let ctx = document.getElementById('graficoRelatorio').getContext('2d');
 
         if(grafico){
@@ -1049,16 +1055,45 @@ function carregarRelatorio(){
                     label: 'Ações por usuário',
                     data: valores
                 }]
-            },
-            options: {
-                responsive: true
             }
         });
 
     })
-    .catch(err => {
-        console.error(err);
-        alert("Erro ao carregar dashboard");
+    .catch(() => {
+        alert("Erro ao carregar relatório");
+    });
+}
+
+// 🔥 COLOCA AQUI EMBAIXO
+function limparFiltros(){
+
+    document.getElementById("filtroData").value = "";
+    document.getElementById("filtroUsuario").value = "";
+    document.getElementById("filtroAssunto").value = "";
+
+    carregarRelatorio();
+}
+
+function carregarUsuariosRelatorio(){
+
+    fetch("/listar_usuarios")
+    .then(r => r.json())
+    .then(lista => {
+
+        let select = document.getElementById("filtroUsuario");
+        if(!select) return;
+
+        select.innerHTML = `<option value="">Todos os usuários</option>`;
+
+        lista.forEach(u => {
+
+            let opt = document.createElement("option");
+            opt.value = u.user;
+            opt.textContent = u.user;
+
+            select.appendChild(opt);
+        });
+
     });
 }
 // ================= ADMIN =================
@@ -1510,4 +1545,64 @@ function limparReativacao(){
     document.getElementById("saidaReativacao").value = "";
 
     document.getElementById("nomeReativacao").focus();
+}
+
+function limparDefer(){
+
+    let curso = document.getElementById("curso");
+    let tipo = document.getElementById("tipo");
+    let saida = document.getElementById("saidaDefer");
+
+    if(curso) curso.value = "";
+    if(tipo) tipo.selectedIndex = 0;
+    if(saida) saida.value = "";
+
+}
+
+function limparDeferTitulo(){
+
+    let curso = document.getElementById("cursoTitulo");
+    let saida = document.getElementById("saidaDeferTitulo");
+
+    if(curso) curso.value = "";
+    if(saida) saida.value = "";
+
+}
+
+function limparInterrupcao(){
+
+    let selInd = document.getElementById("selectIndeferimento");
+    let selDef = document.getElementById("selectDeferimentoInt");
+
+    let outInd = document.getElementById("saidaIndeferimento");
+    let outDef = document.getElementById("saidaDeferimentoInt");
+
+    if(selInd) selInd.selectedIndex = 0;
+    if(selDef) selDef.selectedIndex = 0;
+
+    if(outInd) outInd.value = "";
+    if(outDef) outDef.value = "";
+
+}
+
+function limparCard(idCard){
+
+    let card = document.getElementById(idCard);
+    if(!card) return;
+
+    // inputs e textarea
+    card.querySelectorAll('input, textarea').forEach(el => {
+        el.value = "";
+    });
+
+    // selects
+    card.querySelectorAll('select').forEach(sel => {
+        sel.selectedIndex = 0;
+    });
+
+    // listas/tags
+    card.querySelectorAll('.tags').forEach(el => {
+        el.innerHTML = "";
+    });
+
 }
