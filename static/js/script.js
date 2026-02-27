@@ -1504,44 +1504,6 @@ Para emissão do boleto de anuidade, acesse o seu ambiente profissional. Caso pr
     saida.value = textos[tipo] || "";
 }
 
-function carregarRelatorio(){
-
-    fetch('/relatorio')
-    .then(r => {
-        if(!r.ok){
-            throw new Error("Erro ao carregar relatório");
-        }
-        return r.json();
-    })
-    .then(data => {
-
-        let tabela = document.getElementById('tabelaRelatorio');
-
-        let html = `
-            <tr>
-                <th>Usuário</th>
-                <th>Ações</th>
-            </tr>
-        `;
-
-        data.forEach(item => {
-            html += `
-                <tr>
-                    <td>${item.usuario}</td>
-                    <td>${item.acoes}</td>
-                </tr>
-            `;
-        });
-
-        tabela.innerHTML = html;
-
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Erro ao carregar relatório");
-    });
-}
-
 function limparReativacao(){
     document.getElementById("nomeReativacao").value = "";
     document.getElementById("tipoReativacao").value = "";
